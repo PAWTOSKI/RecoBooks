@@ -1,0 +1,7 @@
+/env_virtuel/
+/analyse_donnees/
+/donnees/
+/databases/
+config.json
+requirements.txt
+config_exemple.json
