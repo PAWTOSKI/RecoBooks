@@ -1,6 +1,6 @@
 /env_virtuel/
 /analyse_donnees/
-/donnees/
+/data/
 /databases/
 config.json
 requirements.txt
