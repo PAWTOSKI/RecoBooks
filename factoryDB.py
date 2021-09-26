@@ -11,7 +11,7 @@ def create_database():
     """
         creer les tables dans un SGDB
     """
-    models.Base.metadata.create_all(engine)
+    model.Base.metadata.create_all(engine)
     db_session.commit()
 
 
