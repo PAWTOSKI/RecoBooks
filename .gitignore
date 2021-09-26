@@ -4,4 +4,6 @@
 /databases/
 config.json
 requirements.txt
+/databases/__pycache__/
+
 
