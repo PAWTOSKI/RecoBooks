@@ -1,19 +1,11 @@
 import pandas as pd
-import model
-import os
-from database import engine, DBsession
-from services import (format_books, format_tags, format_ratings, format_to_read, format_book_tags)
-from model import Book, Tag, Rating, Book_tags, To_read
+import models
+from .database import engine, DBsession
+from .services import (format_books, format_tags, format_ratings, format_to_read, format_book_tags)
+from .models import Book, Tag, Rating, Book_tags, To_read
 
-
-
-def create_database():
-    """
-        creer les tables dans un SGDB
-    """
-    model.Base.metadata.create_all(engine)
-    db_session.commit()
-
+db_session = DBsession()
+models.Base.metadata.create_all(engine)
 
 
 def insert_db():
@@ -23,22 +15,26 @@ def insert_db():
     
     # On récupère les données du fichier CSV dans un dataframe
     print("Read CSV")
-    books = pd.read_csv("RecoBooks/data/books.csv")
-    ratings = pd.read_csv("RecoBooks/data/ratings.csv")
-    to_reads = pd.read_csv("RecoBooks/data/to_read.csv")
-    tags = pd.read_csv("RecoBooks/data/tags.csv", encoding="UTF-8")
-    book_tags = pd.read_csv("RecoBooks/data/book_tags.csv")
+    books = pd.read_csv("data/books.csv")
+    ratings = pd.read_csv("data/ratings.csv")
+    to_reads = pd.read_csv("data/to_read.csv")
+    tags = pd.read_csv("data/tags.csv", encoding="encoding='UTF-8")
+    book_tags = pd.read_csv("data/book_tags.csv")
 
     #On formater, nettoyer des donnees
-    print("---1. Nettoyer data")
+    print("Nettoyer data")
     books = format_books(books)
-    tags = format_tags(tags)
-    to_reads = format_to_read(to_reads)
     ratings = format_ratings(ratings)
-    book_tags = format_book_tags(book_tags)
+    tags = format_tags(tags)
+    book_tags = format_book_tags(tags, book_tags)
+    #supprimer anciens tag_id du df tags
+    tags = tags[['new_tag_id','tag_name']].copy() 
+    tags = tags.rename(columns={'new_tag_id':'tag_id'})
+    
+    to_reads = format_to_read(to_reads)
 
     #inserer les datas à BD
-    print("---2. Inserer data...")
+    print("Inserer data...")
     Book.insert_from_pd(books)
     Tag.insert_from_pd(tags)
     Rating.insert_from_pd(ratings)
@@ -46,10 +42,5 @@ def insert_db():
     To_read.insert_from_pd(to_reads)
     print("Les données sont insérées to DB")
     db_session.commit()
-
-
-db_session = DBsession()    
-#print("Creer des tables à la DB.... ")
-#create_database()
-print("Intégrer des donnees commence...")
+    
 insert_db()

@@ -1,4 +1,7 @@
 import pandas as pd
+import numpy as np
+import re
+
 
 
 def format_books(data_books: pd.DataFrame):
@@ -10,14 +13,25 @@ def format_books(data_books: pd.DataFrame):
         *** Return:
             dataframe est prête d'inserer
     """
-    ### Nettoyer
+    #nettoyage et uniformisation des labels de titres originaux. En effet, il est a été adopter par convention par les
+    # auteurs qu'une valeur manquante dans ce champ d'un film signifie que ce film n'a été publié qu'en une seule édition.
+    # Par conséquent, le champ "Title" équivaut au champ "Original_title" dans ce cas de figure et il convient d'insérer dans
+    # une valeur par défaut dans le champ "Original_title". 
 
+    #suppresion des doubons
+    data_books.drop_duplicates(inplace=True)
+    
+    mask=data_books["original_title"].isna()
+    data_books.loc[mask,"original_title"]=='0'
 
+    #suppresion des doubons
+    data_books.dropna(inplace=True)
 
     ### preparer dataframe
+    data_books = data_books[["book_id", "authors", "books_count", "original_title", "language_code", "ratings_count", "goodreads_book_id", "original_publication_year", "ratings_1", "ratings_2", "ratings_3", "ratings_4", "ratings_5"]].copy()
     data_books = data_books.rename(
         columns = {
-            "book_id": "book_id",
+            "book_id": "id",
             "authors": "authors",
             "books_count": "books_count",
             "original_title": "original_title",
@@ -25,11 +39,11 @@ def format_books(data_books: pd.DataFrame):
             "ratings_count": "ratings_count",
             "goodreads_book_id": "goodreads_book_id",
             "original_publication_year": "original_publication_year",
-            "rating1":"rating1", 
-            "rating2":"rating2",
-            "rating3":"rating3",
-            "rating4":"rating4",
-            "rating5":"rating5"    
+            "ratings_1":"rating1", 
+            "ratings_2":"rating2",
+            "ratings_3":"rating3",
+            "ratings_4":"rating4",
+            "ratings_5":"rating5"    
                 }
         )
     data_books.index += 1
@@ -37,18 +51,72 @@ def format_books(data_books: pd.DataFrame):
     return data_books
 
 
+
+def format_ratings(data_ratings: pd.DataFrame):
+    """
+        afin d'avoir un df ratings tout prête à insérer dans BD
+    """
+
+    #suppresion des doubons
+    data_ratings.drop_duplicates(inplace=True)
+
+    #suppresion des doubons
+    data_ratings.dropna(inplace=True)    
+
+    data_ratings = data_ratings.rename(
+            columns = {
+                "user_id": "user_id",
+                "book_id": "book_id",
+                "rating": "rate"
+                    }
+        )
+    data_ratings.index += 1
+    
+    return data_ratings
+
+
+
+def netoieTags (x):
+    """
+        Nettoyer les tags
+        *** Params:
+        x: tag_name
+        *** Return
+        tag_name nettoyé et normalisé
+    """
+    x = ''.join(char.lower() for char in x if char.isalpha() and char!=' ')
+    
+    #supprimer les s à la fin 
+    x = re.sub('(.+)(s)',r"\1",x) 
+    x = re.sub('[read,new,old,toread]','',x)
+    
+    #garder que les tags qui ont plus de 3 caracteres
+    return  x if len(x)>3  else '' 
+
+
+
 def format_tags(data_tags: pd.DataFrame):
     """
         préparer df tags afin d'avoir un df prête à insérer dans BD
     """
+    # nettoyer tag_name au fonction de netoieTags
+    data_tags['tag_name'] = data_tags['tag_name'].apply(lambda x :netoieTags(x)) #appliquer le netoyage sur l'ensemble des lignes tags
     
-    ###
-    # ajouter partie nettoyer ou appelle fonction de traiter des tags
+    #remplacer les vide par nan pour
+    data_tags = data_tags.replace('', np.nan, regex=True) 
+    data_tags = data_tags.dropna()
+    data_tags = data_tags.reset_index(drop=True)
+
+    #créer df new_tag de liste de tag_name étant nettoyés
+    new_tags = pd.DataFrame(list(data_tags['tag_name'].unique().tolist()), columns=['tag_name'])
+    new_tags['new_tag_id'] = new_tags.index+1
+    data_tags = pd.merge(data_tags,new_tags, how='left',on='tag_name')
     
     data_tags = data_tags.rename(
         columns = {
-            "id_tag": "id_id_tag",
-            "tag_name": "tag_name"
+            "id_tag": "id",
+            "tag_name": "tag_name",
+            "new_tag_id": "new_tag_id"
                 }
         )
     data_tags.index += 1
@@ -56,43 +124,34 @@ def format_tags(data_tags: pd.DataFrame):
     return data_tags
 
 
-def format_ratings(data_ratings: pd.DataFrame):
-    """
-        afin d'avoir un df ratings tout prête à insérer dans BD
-    """
 
-    data_ratings = data_ratings.rename(
-            columns = {
-                "id": "user_id",
-                "book_id": "book_id"
-                    }
-        )
-    ### ??? 
-    data_ratings.index += 1
-    
-    return data_ratings
-
-
-def format_to_read(to_read: pd.DataFrame):
+def format_book_tags(data_tags : pd.DataFrame, data_book_tags: pd.DataFrame):
     """
-        nettoyer et formatter des données fournant par dataframe: books
-        afin d'avoir un df books tout prête à insérer dans BD
+        nettoyer et formatter book_tags et Actualiser la valeur de count  
+        afin d'avoir df book_tags prête à insérer dans BD
+        
+        *** Params:
+        - data_tags : df de tags étant nettoyé
+        - data_book_tags : df de book_tags lisant de fichier
+        
+        *** Return:
+        df data_book_tags avec de nouveuau tag_id et count étant actualisé
     """
     
+    data_book_tags = pd.merge(data_book_tags, data_tags, how='left' ,on='tag_id')
     
-    return to_read
-
-
-def format_book_tags(data_book_tags: pd.DataFrame):
-    """
-        nettoyer et formatter des données fournant par dataframe: books
-        afin d'avoir un df books tout prête à insérer dans BD
-    """
-
+    #suppresion des doubons
+    data_book_tags.drop_duplicates(inplace=True)
+    data_book_tags = data_book_tags.dropna(inplace=True)
+    data_book_tags = data_book_tags.reset_index(drop=True)
+    data_book_tags = data_book_tags.groupby(['goodreads_book_id','new_tag_id']).agg({'count':'sum'}).reset_index()
+    data_book_tags.rename(columns={'new_tag_id':'tag_id'}, inplace=True)
+    
     data_book_tags = data_book_tags.rename(
             columns = {
                 "goodreads_book_id": "goodreads_book_id",
-                "tag_id": "tag_id"
+                "tag_id": "tag_id",
+                "count": "count"
                     }
         )
     data_book_tags.index += 1
@@ -100,13 +159,30 @@ def format_book_tags(data_book_tags: pd.DataFrame):
     return data_book_tags
 
 
+def format_to_read(to_read: pd.DataFrame):
+    """
+        nettoyer et formatter des données de df to_read pour insérer dans BD
+    """
+    to_read.drop_duplicates(inplace=True)
+    to_read.dropna(inplace=True)
+    
+    return to_read
+
+
+
 def format_user(data_users: pd.DataFrame):
     """
         
     """
+    #suppresion des doubons
+    data_users.drop_duplicates(inplace=True)
+
+    #suppresion des doubons
+    data_users.dropna(inplace=True)  
+
     data_users = data_users.rename(
         columns={
-            "id": "id",
+            "user_id": "id",
             "name": "name", 
             "password":"password"
                 }
@@ -114,3 +190,10 @@ def format_user(data_users: pd.DataFrame):
     data_users.index += 1        
     
     return data_users
+
+########################## WIL
+
+#    tags. to_sql('tags', if_exists='append', con=engine, index=False) #insertion dans tags
+#    book_tags.to_sql('book_tags',if_exists='append', con=engine,index=False)
+    
+    
