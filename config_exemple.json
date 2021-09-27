@@ -11,8 +11,8 @@
 /** mysql **/
 {
     "connector": "mysql+mysqldb",
-    "user": "nga",
-    "pwd": "nga",
+    "user": "simplon",
+    "pwd": "Simplon2021",
     "host": "localhost",
     "port": "3306",
     "bd": "recobooks"

@@ -1,11 +1,11 @@
 import pandas as pd
-import models
-from .database import engine, DBsession
-from .services import (format_books, format_tags, format_ratings, format_to_read, format_book_tags)
-from .models import Book, Tag, Rating, Book_tags, To_read
+import model
+from database import engine, DBsession
+from services import (format_books, format_tags, format_ratings, format_to_read, format_book_tags)
+from model import Book, Tag, Rating, Book_tags, To_read
 
 db_session = DBsession()
-models.Base.metadata.create_all(engine)
+model.Base.metadata.create_all(engine)
 
 
 def insert_db():
@@ -15,11 +15,11 @@ def insert_db():
     
     # On récupère les données du fichier CSV dans un dataframe
     print("Read CSV")
-    books = pd.read_csv("data/books.csv")
-    ratings = pd.read_csv("data/ratings.csv")
-    to_reads = pd.read_csv("data/to_read.csv")
-    tags = pd.read_csv("data/tags.csv", encoding="encoding='UTF-8")
-    book_tags = pd.read_csv("data/book_tags.csv")
+    books = pd.read_csv("RecoBooks/data/books.csv")
+    ratings = pd.read_csv("RecoBooks/data/ratings.csv")
+    to_reads = pd.read_csv("RecoBooks/data/to_read.csv")
+    tags = pd.read_csv("RecoBooks/data/tags.csv", encoding="encoding='UTF-8")
+    book_tags = pd.read_csv("RecoBooks/data/book_tags.csv")
 
     #On formater, nettoyer des donnees
     print("Nettoyer data")
