@@ -1,3 +1,4 @@
+DROP DATABASE IF EXISTS `recobooks` ;
 CREATE DATABASE  IF NOT EXISTS `recobooks` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
 USE `recobooks`;
 -- MySQL dump 10.13  Distrib 8.0.21, for Win64 (x86_64)
@@ -54,26 +55,19 @@ DROP TABLE IF EXISTS `books`;
 CREATE TABLE `books` (
   `book_id` int NOT NULL,
   `goodreads_book_id` int NOT NULL,
-  `best_book_id` int NOT NULL,
-  `work_id` int NOT NULL,
   `books_count` int DEFAULT NULL,
   `isbn` int DEFAULT NULL,
-  `isbn13` int DEFAULT NULL,
-  `authors` int DEFAULT NULL,
+  `authors` varchar(250) DEFAULT NULL,
   `original_publication_year` int DEFAULT NULL,
   `original_title` varchar(45) DEFAULT NULL,
   `title` varchar(45) DEFAULT NULL,
   `language_code` varchar(45) DEFAULT NULL,
-  `average_rating` int DEFAULT NULL,
   `ratings_count` int DEFAULT NULL,
-  `work_text_reviews_count` int DEFAULT NULL,
   `ratings_1` int DEFAULT NULL,
   `ratings_2` int DEFAULT NULL,
   `ratings_3` int DEFAULT NULL,
   `ratings_4` int DEFAULT NULL,
   `ratings_5` int DEFAULT NULL,
-  `image_url` varchar(100) DEFAULT NULL,
-  `bookscolsmall_image_url` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`book_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -91,17 +85,17 @@ UNLOCK TABLES;
 -- Table structure for table `rating`
 --
 
-DROP TABLE IF EXISTS `rating`;
+DROP TABLE IF EXISTS `ratings`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `rating` (
+CREATE TABLE `ratings` (
   `user_id` int NOT NULL,
   `book_id` int NOT NULL,
   `rating` int NOT NULL,
   PRIMARY KEY (`user_id`,`book_id`),
   KEY `bookRat_id_fk_idx` (`book_id`),
   CONSTRAINT `bookRat_id_fk` FOREIGN KEY (`book_id`) REFERENCES `books` (`book_id`),
-  CONSTRAINT `userRat_id_fk` FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`)
+  CONSTRAINT `userRat_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -109,9 +103,9 @@ CREATE TABLE `rating` (
 -- Dumping data for table `rating`
 --
 
-LOCK TABLES `rating` WRITE;
-/*!40000 ALTER TABLE `rating` DISABLE KEYS */;
-/*!40000 ALTER TABLE `rating` ENABLE KEYS */;
+LOCK TABLES `ratings` WRITE;
+/*!40000 ALTER TABLE `ratings` DISABLE KEYS */;
+/*!40000 ALTER TABLE `ratings` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -167,13 +161,13 @@ UNLOCK TABLES;
 -- Table structure for table `user`
 --
 
-DROP TABLE IF EXISTS `user`;
+DROP TABLE IF EXISTS `users`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `user` (
+CREATE TABLE `users` (
   `user_id` int NOT NULL,
   `pseudo` varchar(45) DEFAULT NULL,
-  `mdp` varchar(45) DEFAULT NULL,
+  `password` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -182,9 +176,9 @@ CREATE TABLE `user` (
 -- Dumping data for table `user`
 --
 
-LOCK TABLES `user` WRITE;
-/*!40000 ALTER TABLE `user` DISABLE KEYS */;
-/*!40000 ALTER TABLE `user` ENABLE KEYS */;
+LOCK TABLES `users` WRITE;
+/*!40000 ALTER TABLE `users` DISABLE KEYS */;
+/*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
