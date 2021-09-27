@@ -2,77 +2,87 @@
 
 import pandas as pd
 import numpy as np
+from pandas.core.frame import DataFrame
+import enum
 import os
 import glob
 from lxml import etree
 import xml.etree.ElementTree as et
 import xmltodict
 import re
+from sqlalchemy import Column, String, Integer, Enum, ForeignKey
+from sqlalchemy.orm import relationship
+from test_db import Base
 
-# ces classes ont à utiliser si un ORM est employé.
+# ces classes sont définis selon le schéma imposé par l'ORM.
 
-
-##Classe d'objet : livre
+# Classe d'objet : livre
 
 class Book(Base):
 
-
-
-    __tablename__="house"
-    authors=Column("authors", String(), nullable=True)
-    id=Column('book_id', Integer(10), primary_key=True)
-    books_count=Columns('books_count', Integer(15), nullable=True)
-    original_title=Column('original_title', String(), nullable=True)
-    language_code=Column('language_code', Integer(15), nullable=False )
-    ratings_count=Column('ratings_count', Integer(15), nullable=True)
-    goodreads_book_id=Column('goodreads_book_id', Integer(15), nullable=True)
-    original_publication_year=Column('original_publication_year', Integer(15), nullable=True)
-    rating1=Column('rating1', Integer(15), nullable=True)
-    rating2=Column('rating2', Integer(15), nullable=True)
-    rating3=Column('rating3', Integer(15), nullable=True)
-    rating4=Column('rating4', Integer(15), nullable=True)
-    rating5=Column('rating5', Integer(15), nullable=True)
-    books_to_read=relationship('To_read', cascade="save-update, delete, delete-orphan") 
-    books_tags=relationschip('Book_tags', cascade="save-update, delete, delete-orphan")
+    #définition des arguments de la table
+    __tablename__="books"
+    __table_args__ = {'extend_existing': True}
+    
+    #définition desclonnes de la table
+    authors=Column(String, nullable=True)
+    title=Column(String, nullable=False)
+    book_id=Column(Integer, primary_key=True)
+    isbn=Column(Integer, nullable=True)
+    books_count=Column(Integer, nullable=True)
+    original_title=Column(String, nullable=True)
+    language_code=Column( Integer, nullable=False )
+    ratings_count=Column(Integer, nullable=True)
+    goodreads_book_id=Column(Integer, nullable=True)
+    original_publication_year=Column(Integer, nullable=True)
+    ratings_1=Column(Integer, nullable=True)
+    ratings_2=Column(Integer, nullable=True)
+    ratings_3=Column(Integer, nullable=True)
+    ratings_4=Column(Integer, nullable=True)
+    ratings_5=Column(Integer, nullable=True)
 
     
-    """def __init__(self, title: str, goodreads_book_id: int ,authors:list=[], book_id:int=0, books_count: int=0, 
-                 original_title: str='0', language_code: str='', ratings_count:int=0, original_publication_year: int=0, 
-                 rating1: int=0, rating2: int=0, rating3: int=0, rating4: int=0, rating5: int=0 ):
+    def __init__(self, title, goodreads_book_id,isbn, authors, book_id, books_count, 
+                 original_title, language_code, ratings_count, original_publication_year, 
+                 ratings_1: int=0, ratings_2: int=0, ratings_3: int=0, ratings_4: int=0, ratings_5: int=0 ):
 
-                self._title=re.sub(r'(:?\W+)',' ', title).lower()
-                self._authors=[re.sub(r'(:?\W+)', 
+                self.title=re.sub(r'(:?\W+)',' ', title).lower()
+                self.authors=[re.sub(r'(:?\W+)', 
                                         i, 
                                         title)\
                                     .lower() for i in authors if isinstance(i,str)
                                 ]
 
-                self._book_id=book_id
-                self._books_count=books_count
-                self._original_title=re.sub(r'(:?\W+)',' ', original_title).lower()
-                self._language_code=language_code
-                self._ratings_count=ratings_count
-                self._goodreads_book_id=goodreads_book_id
-                self._original_publication_year=int(original_publication_year)
-                self._rating1=int(rating1)
-                self._rating2=int(rating2)
-                self._rating3=int(rating3)
-                self._rating4=int(rating4)
-                self._rating5=int(rating5)"""
+                self.book_id=book_id
+                self.isbn=isbn
+                self.books_count=books_count
+                self.original_title=re.sub(r'(:?\W+)',' ', original_title).lower()
+                self.language_code=language_code
+                self.ratings_count=ratings_count
+                self.goodreads_book_id=goodreads_book_id
+                self.original_publication_year=int(original_publication_year)
+                self.ratings_1=int(ratings_1)
+                self.ratings_2=int(ratings_2)
+                self.ratings_3=int(ratings_3)
+                self.ratings_4=int(ratings_4)
+                self.ratings_5=int(ratings_5)
     
-    
-    def get_similar_book(goodreads_book_id):
 
+    # Extraction des livres similaires pour un livre donné sur la base de l'identifiant "goodreads_book_id",
+    # ce à partir du fichier XML lui étant attribué.
+    def get_similar_book(self):
         list_similar_b=[]
 
         #changement du répertoire de travail
 
         os.chdir("../RecoBooks")
+
+
         #extraction du chemin relatif vers la fiche du livre
+
         for file in glob.iglob(f'{os.getcwd()}/**/data/books_xml', recursive=True):
             root_file_book=file
-
-        url_books_similar=f'{root_file_book}/{goodreads_book_id}.xml'
+        url_books_similar=f'{root_file_book}/{self.goodreads_book_id}.xml'
 
 
         #ouverture et parsage du fichier xml
@@ -89,150 +99,100 @@ class Book(Base):
                 print(book_similar['id'])
                 list_similar_b.append(book_similar['id'])
         
-        self._similar_books=list_similar_b
+        self.similar_books=list_similar_b
 
 
-    def insert_from_pd(data_books: DataFrame):
-        data_books = data_books.rename(
-            columns={
-                "authors": "authors",
-                "book_id": "book_id",
-                "books_count": "books_count",
-                "original_title": "original_title",
-                "language_code": "language_code",
-                "ratings_count": "ratings_count",
-                "goodreads_book_id": "goodreads_book_id",
-                "original_publication_year": "original_publication_year",
-                "rating1":"rating1", 
-                "rating2":"rating2",
-                "rating3":"rating3",
-                "rating4":"rating4",
-                "rating5":"rating5"    
-                    }
-                                        )
-                                        
-        data_books.index += 1
-        data_books.to_sql("book", if_exists="append", con=db.engine, index=False)
-
-
-
-
+# Classe d'objet : utilisateur
 class User(Base):
     
-    __tablename__ ='user'
-    id=Column("user_id", Integer(15), primary_key=True)
-    name=Column('user_name', String(), nullable=False)
-    password=Column('password', String(15), nullable=False)
+    #définition des arguments de la table
+
+    __tablename__ ='users'
+    __table_args__ = {'extend_existing': True} 
+    user_id=Column(Integer(), primary_key=True)
+    pseudo=Column(String(), nullable=False)
+    password=Column(String(), nullable=False)
 
 
-    """def __init__(self, id: int, user_name: str, password: str):
-        self._id=id
-        self._user_name=str(user_name)
-        self._password=str(password)"""
-       
-
-    def insert_from_pd(data_users: DataFrame):
-        data_users = data_users.rename(
-            columns={
-                "id": "id",
-                "name": "name", 
-                "password":"password"
-                    }
-                                        )
-                                        
-        data_users.index += 1
-        data_users.to_sql("user", if_exists="append", con=db.engine, index=False)        
+    def __init__(self, user_id, pseudo, password):
+        self.user_id=user_id
+        self.pseudo=pseudo
+        self.password=password       
 
 
 
-
-
+# Classe d'objet : Tag
 class Tag(Base):
     
-    __tablename__='tag'
-    id=Column('tag_id', Integer(15), primary_key=True)
-    title=Column('tag_title', String() , nullable=False)
+    #définition des arguments de la table
 
-    """def __init__( self, tag_id: str=='0', tag_title: str=='None' ):
-        self._tag_id=tag_id
-        self._tag_title=re.sub(r'(:?\W+)',' ', tag_title).lower()"""
-    
-    def insert_from_pd(data_tags: DataFrame):
-        data_tags = data_tags.rename(
-            columns={
-                "id": "id",
-                "title": "title"
-                    }
-                                        )
-                                        
-        data_tags.index += 1
-        data_tags.to_sql("tags", if_exists="append", con=db.engine, index=False) 
+    __tablename__='tags'
+    __table_args__ = {'extend_existing': True} 
+
+    tag_id=Column(Integer, primary_key=True)
+    tag_name=Column(String , nullable=False)
+
+    def __init__( self, tag_id , tag_name):
+        self.tag_id=tag_id
+        self.tag_name=tag_name
 
 
-
-
+# Classe d'objet : Notes des avis
 class Rating(Base):
     
-    __tablename__='rating'
-    user_id=Column('user_id', ForeignKey('user.id'))
-    book_id=Column('book_id', ForeignKey('book.id'))
-    rate=Column('rate', Enum(1, 2, 3, 4, 5) )
-    book=relationship('Book', cascade="save-update, delete, delete-orphan")
-    user=relationship('User', cascade="save-update, delete, delete-orphan")
+    #définition des arguments de la table
 
-    """def __init__(self,  user_id: int=0, book_id: int=0, rate: int=0 ):
-        self._user_id=user_id
-        self._book_id=book_id
-        self._rate=int(rate)"""
+    __tablename__='ratings'
+    __table_args__ = {'extend_existing': True}
 
-    def insert_from_pd(data_tags: DataFrame):
-        data_tags = data_tags.rename(
-            columns={
-                "id": "id",
-                "book_id": "book_id", 
-                "rate": "rate"
-                    }
-                                        )
-                                        
-        data_tags.index += 1
-        data_tags.to_sql("ratings", if_exists="append", con=db.engine, index=False)     
+    user_id=Column(ForeignKey('users.user_id'), primary_key=True)
+    book_id=Column(ForeignKey('books.book_id'), primary_key=True)
+    rating=Column(Enum("1", "2", "3", "4", "5") )
+
+    #définition des relations clés primaires - clés étrangères, avec définition des modifications en cascade
+    book=relationship('Book', cascade="save-update, delete", backref='ratings')
+    user=relationship('User', cascade="save-update, delete", backref='ratings')
+
+    def __init__(self, user, book, rating ):
+        self.user_id=user
+        self.book_id=book
+        self.rating=rating    
 
 
-
+# Classe d'objet : catégories de livre
 class Book_tags(Base):
     
+    #définition des arguments de la table
     __tablename__='book_tags'
-    goodreads_book_id=Column('book', ForeignKey("book.goodreads_book_id"))
-    tag_id=Column('Tag', ForeignKey("tag.id"))
-    count=Column('count', Integer(15), nullable=False)
-    goodreads_book=relationship('Book', cascade="save-update, delete, delete-orphan")
-    tag=relationship('Tag', cascade="save-update, delete, delete-orphan")
+    __table_args__ = {'extend_existing': True} 
+
+    goodreads_book_id=Column('book', ForeignKey("books.goodreads_book_id"), primary_key=True)
+    tag_id=Column(ForeignKey("tags.tag_id"), primary_key=True)
+    count=Column(Integer(), nullable=False)
+    goodreads_book=relationship('Book', cascade="save-update, delete", backref='book_tags')
+    tag=relationship('Tag', cascade="save-update, delete", backref='book_tags')
 
 
-    """def __init__(self, goodreads_book_id: int=0, tag_id: int=0, count: int=0 ):
+    def __init__(self, goodreads_book_id, tag_id, count ):
 
-        self._goodreads_book_id=int(goodreads_book_id)
-        self._tag_id=int(tag_id)
-        self._count=int(count)"""
-
-
-    def insert_from_pd(data_book_tags: DataFrame):
-        data_book_tags = data_book_tags.rename(
-            columns={
-                "goodreads_book_id": "goodreads_book_id",
-                "tag_id": "tag_id",
-                "count": "count"
-                    }
-                                        )
-
-        data_book_tags.index += 1
-        data_book_tags.to_sql("book_tags", if_exists="append", con=db.engine, index=False)
+        self._goodreads_book_id=goodreads_book_id
+        self._tag_id=tag_id
+        self._count=count
 
 
+## Classe d'objet : Livres prévus pour être lu par le lecteur
 class to_read(Base):
-    
-    user_id=Column("user_id", ForeignKey("user.id"))
-    book_id=Column("book_id", ForeignKey("book.id"))
-    books=relationship("Book", cascade="save-update, delete, delete-orphan")  
-    users=relationship("User", cascade="save-update, delete, delete-orphan")  
+
+    #définition des arguments de la table
+    __tablename__='to_read'
+    __table_args__ = {'extend_existing': True}
+
+    user_id=Column("user_id", ForeignKey("users.user_id"), primary_key=True)
+    book_id=Column("book_id", ForeignKey("books.book_id"), primary_key=True)
+
+    #définition des relations clés primaires - clés étrangères, avec définition des modifications en cascade
+    books=relationship("Book", cascade="save-update, delete", backref='to_read')  
+    users=relationship("User", cascade="save-update, delete", backref='to_read')  
+
+
     
