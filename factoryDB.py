@@ -1,11 +1,12 @@
 import pandas as pd
-import model
+import models
 from database import engine, DBsession
 from services import (format_books, format_tags, format_ratings, format_to_read, format_book_tags)
-from model import Book, Tag, Rating, Book_tags, To_read
+from models import Book, Tag, Rating, Book_tag, To_read
 
 db_session = DBsession()
-model.Base.metadata.create_all(engine)
+models.Base.metadata.create_all(engine)
+ #DBsession.remove(db_session)
 
 
 def insert_db():
@@ -18,7 +19,7 @@ def insert_db():
     books = pd.read_csv("RecoBooks/data/books.csv")
     ratings = pd.read_csv("RecoBooks/data/ratings.csv")
     to_reads = pd.read_csv("RecoBooks/data/to_read.csv")
-    tags = pd.read_csv("RecoBooks/data/tags.csv", encoding="encoding='UTF-8")
+    tags = pd.read_csv("RecoBooks/data/tags.csv", encoding="UTF-8")
     book_tags = pd.read_csv("RecoBooks/data/book_tags.csv")
 
     #On formater, nettoyer des donnees
@@ -35,10 +36,10 @@ def insert_db():
 
     #inserer les datas à BD
     print("Inserer data...")
-    Book.insert_from_pd(books)
+    Book.insert_from_pd(books, db_session)
     Tag.insert_from_pd(tags)
     Rating.insert_from_pd(ratings)
-    Book_tags.insert_from_pd(book_tags)
+    Book_tag.insert_from_pd(book_tags)
     To_read.insert_from_pd(to_reads)
     print("Les données sont insérées to DB")
     db_session.commit()

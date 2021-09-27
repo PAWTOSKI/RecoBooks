@@ -31,7 +31,7 @@ def format_books(data_books: pd.DataFrame):
     data_books = data_books[["book_id", "authors", "books_count", "original_title", "language_code", "ratings_count", "goodreads_book_id", "original_publication_year", "ratings_1", "ratings_2", "ratings_3", "ratings_4", "ratings_5"]].copy()
     data_books = data_books.rename(
         columns = {
-            "book_id": "id",
+            "book_id": "book_id",
             "authors": "authors",
             "books_count": "books_count",
             "original_title": "original_title",
@@ -39,11 +39,11 @@ def format_books(data_books: pd.DataFrame):
             "ratings_count": "ratings_count",
             "goodreads_book_id": "goodreads_book_id",
             "original_publication_year": "original_publication_year",
-            "ratings_1":"rating1", 
-            "ratings_2":"rating2",
-            "ratings_3":"rating3",
-            "ratings_4":"rating4",
-            "ratings_5":"rating5"    
+            "ratings_1":"ratings_1", 
+            "ratings_2":"ratings_2",
+            "ratings_3":"ratings_3",
+            "ratings_4":"ratings_4",
+            "ratings_5":"ratings_5"    
                 }
         )
     data_books.index += 1
@@ -67,7 +67,7 @@ def format_ratings(data_ratings: pd.DataFrame):
             columns = {
                 "user_id": "user_id",
                 "book_id": "book_id",
-                "rating": "rate"
+                "rating": "rating"
                     }
         )
     data_ratings.index += 1
@@ -142,7 +142,7 @@ def format_book_tags(data_tags : pd.DataFrame, data_book_tags: pd.DataFrame):
     
     #suppresion des doubons
     data_book_tags.drop_duplicates(inplace=True)
-    data_book_tags = data_book_tags.dropna(inplace=True)
+    #data_book_tags = data_book_tags.dropna(inplace=True)
     data_book_tags = data_book_tags.reset_index(drop=True)
     data_book_tags = data_book_tags.groupby(['goodreads_book_id','new_tag_id']).agg({'count':'sum'}).reset_index()
     data_book_tags.rename(columns={'new_tag_id':'tag_id'}, inplace=True)
