@@ -38,9 +38,12 @@ def insert_db():
     print("Inserer data...")
     Book.insert_from_pd(books, db_session)
     Tag.insert_from_pd(tags)
-    Rating.insert_from_pd(ratings)
+    #Rating.insert_from_pd(ratings)
     Book_tag.insert_from_pd(book_tags)
-    To_read.insert_from_pd(to_reads)
+     #supprimer anciens tag_id du df tags
+    tags = tags[['new_tag_id','tag_name']].copy() 
+    tags = tags.rename(columns={'new_tag_id':'tag_id'})
+    #To_read.insert_from_pd(to_reads)
     print("Les données sont insérées to DB")
     db_session.commit()
     
