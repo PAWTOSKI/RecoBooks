@@ -16,54 +16,53 @@ from database import Base, engine #importer objet Base du fichier database.py
 
 
 class Book(Base):
-    __tablename__ = "books"
+ 
+   #définition des arguments de la table
+    __tablename__="books"
+    __table_args__ = {'extend_existing': True}
+    
+    #définition desclonnes de la table
+    authors=Column(String, nullable=True)
+    title=Column(String, nullable=False)
+    book_id=Column(Integer, primary_key=True)
+    isbn=Column(Integer, nullable=True)
+    books_count=Column(Integer, nullable=True)
+    original_title=Column(String, nullable=True)
+    language_code=Column( Integer, nullable=False )
+    ratings_count=Column(Integer, nullable=True)
+    goodreads_book_id=Column(Integer, nullable=True)
+    original_publication_year=Column(Integer, nullable=True)
+    ratings_1=Column(Integer, nullable=True)
+    ratings_2=Column(Integer, nullable=True)
+    ratings_3=Column(Integer, nullable=True)
+    ratings_4=Column(Integer, nullable=True)
+    ratings_5=Column(Integer, nullable=True)
 
-    #declarer les colonnes de la table "book"
-    book_id = Column(Integer, primary_key=True)
-    authors = Column(String, nullable=True)
-    books_count = Column(Integer, nullable=True)
-    original_title = Column(String, nullable=True)
-    language_code = Column(String, nullable=False )
-    ratings_count = Column(Integer, nullable=True)
-    goodreads_book_id = Column(Integer, nullable=True, unique=True)
-    original_publication_year = Column(Integer, nullable=True)
-    ratings_1 = Column(Integer, nullable=True)
-    ratings_2 = Column(Integer, nullable=True)
-    ratings_3 = Column(Integer, nullable=True)
-    ratings_4 = Column(Integer, nullable=True)
-    ratings_5 = Column(Integer, nullable=True)
-    #similar_books = 
-
-    #creer les relations entre book et lesratings_5 3 tables 'To_read', 'Rating', 'Book_tags'
-    books_to_read = relationship('To_read', backref='Book', lazy=True)
-    books_ratings = relationship('Rating', backref='Book', lazy=True)
-    books_tags = relationship('Book_tag', backref='Book', lazy=True )
-
-
-    def __init__(self, book_id:int=0, authors:list=[], books_count: int=0, original_title: str='0', language_code: str='', ratings_count:int=0,
-                   goodreads_book_id: int=0, original_publication_year: int=0, 
+    
+    def __init__(self, title, goodreads_book_id,isbn, authors, book_id, books_count, 
+                 original_title, language_code, ratings_count, original_publication_year, 
                  ratings_1: int=0, ratings_2: int=0, ratings_3: int=0, ratings_4: int=0, ratings_5: int=0 ):
 
-                self._authors = [re.sub(r'(:?\W+)', 
+                self.title=re.sub(r'(:?\W+)',' ', title).lower()
+                self.authors=[re.sub(r'(:?\W+)', 
                                         i, 
-                                        authors)\
+                                        title)\
                                     .lower() for i in authors if isinstance(i,str)
                                 ]
 
-                self._book_id = book_id
-                self._authors = authors
-                self._books_count = books_count
-                self._original_title = re.sub(r'(:?\W+)',' ', original_title).lower()
-                self._language_code = language_code
-                self._ratings_count = ratings_count
-                self._goodreads_book_id = goodreads_book_id
-                self._original_publication_year = original_publication_year
-                self._ratings_1=ratings_1
-                self._ratings_2=ratings_2
-                self._ratings_3=ratings_3
-                self._ratings_4=ratings_4
-                self._ratings_5=ratings_5
-
+                self.book_id=book_id
+                self.isbn=isbn
+                self.books_count=books_count
+                self.original_title=re.sub(r'(:?\W+)',' ', original_title).lower()
+                self.language_code=language_code
+                self.ratings_count=ratings_count
+                self.goodreads_book_id=goodreads_book_id
+                self.original_publication_year=int(original_publication_year)
+                self.ratings_1=int(ratings_1)
+                self.ratings_2=int(ratings_2)
+                self.ratings_3=int(ratings_3)
+                self.ratings_4=int(ratings_4)
+                self.ratings_5=int(ratings_5)
 
     def insert_from_pd(data_books: DataFrame, db, n=10000):
 
