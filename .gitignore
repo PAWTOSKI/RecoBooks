@@ -4,5 +4,5 @@
 /databases/
 config.json
 requirements.txt
-RecoBooks/databases/__pycache__/
-
+databases/__pycache__/
+/__pycache__/
