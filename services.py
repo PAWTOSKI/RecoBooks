@@ -28,11 +28,13 @@ def format_books(data_books: pd.DataFrame):
     data_books.dropna(inplace=True)
 
     ### preparer dataframe
-    data_books = data_books[["book_id", "authors", "books_count", "original_title", "language_code", "ratings_count", "goodreads_book_id", "original_publication_year", "ratings_1", "ratings_2", "ratings_3", "ratings_4", "ratings_5"]].copy()
+    data_books = data_books[["book_id", "authors","title", "isbn", "books_count", "original_title", "language_code", "ratings_count", "goodreads_book_id", "original_publication_year", "ratings_1", "ratings_2", "ratings_3", "ratings_4", "ratings_5"]].copy()
     data_books = data_books.rename(
         columns = {
+            "title": "title",
             "book_id": "book_id",
             "authors": "authors",
+            "isbn": "isbn",
             "books_count": "books_count",
             "original_title": "original_title",
             "language_code": "language_code",
@@ -73,6 +75,16 @@ def format_ratings(data_ratings: pd.DataFrame):
     data_ratings.index += 1
     
     return data_ratings
+
+
+def format_users(data_ratings: pd.DataFrame):
+     
+    data_users = pd.DataFrame(data_ratings["user_id"].drop_duplicates(), columns=["user_id"])
+    data_users = data_users.reset_index()
+    data_users = data_users.drop('index', axis=1)
+    data_users['pseudo'] = "pseudo"
+    
+    return data_users
 
 
 
