@@ -67,6 +67,24 @@ class Book(Base):
                 self.ratings_4=int(ratings_4)
                 self.ratings_5=int(ratings_5)
     
+    
+    def insert_from_pd(data_books: DataFrame, db, n=10000):
+
+        for chunk in range(0, data_books.shape[0]-1, 1000):
+            db.bulk_insert_mappings(
+                Book,
+                [
+                    dict(book_id=int(data_books.iloc[i]["book_id"]), authors=data_books.iloc[i]["authors"], books_count=int(data_books.iloc[i]["books_count"]),                        
+                    original_title=data_books.iloc[i]["original_title"], language_code=data_books.iloc[i]["language_code"], 
+                    ratings_count=int(data_books.iloc[i]["ratings_count"]), goodreads_book_id=int(data_books.iloc[i]["goodreads_book_id"]),  
+                    original_publication_year= int(data_books.iloc[i]["original_publication_year"]), 
+                    ratings_1=int(data_books.iloc[i]["ratings_1"]), ratings_2=int(data_books.iloc[i]["ratings_2"]), ratings_3=int(data_books.iloc[i]["ratings_3"]), 
+                    ratings_4=int(data_books.iloc[i]["ratings_4"]), ratings_5=int(data_books.iloc[i]["ratings_5"]))
+                    for i in range(chunk, min(chunk + 1000, data_books.shape[0]-1))
+                ]
+            )
+        db.commit()
+   
 
     # Extraction des livres similaires pour un livre donné sur la base de l'identifiant "goodreads_book_id",
     # ce à partir du fichier XML lui étant attribué.
@@ -120,6 +138,9 @@ class User(Base):
         self.password=password       
 
 
+    def insert_from_pd(data_users: DataFrame):
+        data_users.to_sql("users", if_exists="append", con=engine, index=False)
+        
 
 # Classe d'objet : Tag
 class Tag(Base):
@@ -131,10 +152,15 @@ class Tag(Base):
 
     tag_id=Column(Integer, primary_key=True)
     tag_name=Column(String , nullable=False)
+    
 
     def __init__( self, tag_id , tag_name):
         self.tag_id=tag_id
         self.tag_name=tag_name
+        
+        
+    def insert_from_pd(data_tags: DataFrame):
+        data_tags.to_sql("tags", if_exists="append", con=engine, index=False)
 
 
 # Classe d'objet : Notes des avis
@@ -157,6 +183,11 @@ class Rating(Base):
         self.user_id=user
         self.book_id=book
         self.rating=rating    
+        
+       
+    def insert_from_pd(data_ratings: DataFrame):
+        data_ratings.to_sql("ratings", if_exists="append", con=engine, index=False)     
+
 
 
 # Classe d'objet : catégories de livre
@@ -178,6 +209,11 @@ class Book_tags(Base):
         self._goodreads_book_id=goodreads_book_id
         self._tag_id=tag_id
         self._count=count
+        
+
+     def insert_from_pd(data_book_tags: DataFrame):
+        data_book_tags.to_sql("book_tags", if_exists="append", con=engine, index=False)
+       
 
 
 ## Classe d'objet : Livres prévus pour être lu par le lecteur
@@ -193,6 +229,15 @@ class to_read(Base):
     #définition des relations clés primaires - clés étrangères, avec définition des modifications en cascade
     books=relationship("Book", cascade="save-update, delete", backref='to_read')  
     users=relationship("User", cascade="save-update, delete", backref='to_read')  
-
-
     
+    
+    def __init__(self, goodreads_book_id, tag_id, count ):
+
+        self.user_id=books
+        self.book_id=users
+
+        
+    def insert_from_pd(data_to_reads: DataFrame):
+
+        data_to_reads.to_sql('to_reads', con=engine, if_exists="append", index=False)
+
