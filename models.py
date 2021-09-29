@@ -10,9 +10,9 @@ from lxml import etree
 import xml.etree.ElementTree as et
 import xmltodict
 import re
-from sqlalchemy import Column, String, Integer, Enum, ForeignKey
+from sqlalchemy import Column, String, Integer, Enum, ForeignKey, update
 from sqlalchemy.orm import relationship
-from test_db import Base
+from database import Base, engine, DBsession
 
 # ces classes sont définis selon le schéma imposé par l'ORM.
 
@@ -28,10 +28,10 @@ class Book(Base):
     authors=Column(String, nullable=True)
     title=Column(String, nullable=False)
     book_id=Column(Integer, primary_key=True)
-    isbn=Column(Integer, nullable=True)
+    isbn=Column(String, nullable=True)
     books_count=Column(Integer, nullable=True)
     original_title=Column(String, nullable=True)
-    language_code=Column( Integer, nullable=False )
+    language_code=Column(String, nullable=False )
     ratings_count=Column(Integer, nullable=True)
     goodreads_book_id=Column(Integer, nullable=True)
     original_publication_year=Column(Integer, nullable=True)
@@ -67,6 +67,24 @@ class Book(Base):
                 self.ratings_4=int(ratings_4)
                 self.ratings_5=int(ratings_5)
     
+    
+    def insert_from_pd(data_books: DataFrame, db, n=10000):
+
+        for chunk in range(0, data_books.shape[0]-1, 1000):
+            db.bulk_insert_mappings(
+                Book,
+                [
+                    dict(book_id=int(data_books.iloc[i]["book_id"]), authors=data_books.iloc[i]["authors"], books_count=int(data_books.iloc[i]["books_count"]),                        
+                    original_title=data_books.iloc[i]["original_title"], language_code=data_books.iloc[i]["language_code"], 
+                    ratings_count=int(data_books.iloc[i]["ratings_count"]), goodreads_book_id=int(data_books.iloc[i]["goodreads_book_id"]),  
+                    original_publication_year= int(data_books.iloc[i]["original_publication_year"]), 
+                    ratings_1=int(data_books.iloc[i]["ratings_1"]), ratings_2=int(data_books.iloc[i]["ratings_2"]), ratings_3=int(data_books.iloc[i]["ratings_3"]), 
+                    ratings_4=int(data_books.iloc[i]["ratings_4"]), ratings_5=int(data_books.iloc[i]["ratings_5"]))
+                    for i in range(chunk, min(chunk + 1000, data_books.shape[0]-1))
+                ]
+            )
+        db.commit()
+   
 
     # Extraction des livres similaires pour un livre donné sur la base de l'identifiant "goodreads_book_id",
     # ce à partir du fichier XML lui étant attribué.
@@ -120,6 +138,11 @@ class User(Base):
         self.password=password       
 
 
+    def insert_from_pd(data_users: DataFrame):
+        data_users.to_sql("users", if_exists="append", con=engine, index=False)
+
+
+        
 
 # Classe d'objet : Tag
 class Tag(Base):
@@ -131,10 +154,15 @@ class Tag(Base):
 
     tag_id=Column(Integer, primary_key=True)
     tag_name=Column(String , nullable=False)
+    
 
     def __init__( self, tag_id , tag_name):
         self.tag_id=tag_id
         self.tag_name=tag_name
+        
+        
+    def insert_from_pd(data_tags: DataFrame):
+        data_tags.to_sql("tags", if_exists="append", con=engine, index=False)
 
 
 # Classe d'objet : Notes des avis
@@ -147,16 +175,24 @@ class Rating(Base):
 
     user_id=Column(ForeignKey('users.user_id'), primary_key=True)
     book_id=Column(ForeignKey('books.book_id'), primary_key=True)
-    rating=Column(Enum("1", "2", "3", "4", "5") )
+    rating=Column(Integer )
 
     #définition des relations clés primaires - clés étrangères, avec définition des modifications en cascade
-    book=relationship('Book', cascade="save-update, delete", backref='ratings')
-    user=relationship('User', cascade="save-update, delete", backref='ratings')
+    
+    book=relationship('Book', cascade="save-update, delete", backref='ratings', 
+                        innerjoin=True, lazy="joined")
+    user=relationship('User', cascade="save-update, delete", backref='ratings', 
+                        innerjoin=True, lazy="joined")
 
     def __init__(self, user, book, rating ):
         self.user_id=user
         self.book_id=book
         self.rating=rating    
+        
+       
+    def insert_from_pd(data_ratings: DataFrame):
+        data_ratings.to_sql("ratings", if_exists="append", con=engine, index=False)     
+
 
 
 # Classe d'objet : catégories de livre
@@ -166,33 +202,50 @@ class Book_tags(Base):
     __tablename__='book_tags'
     __table_args__ = {'extend_existing': True} 
 
-    goodreads_book_id=Column('book', ForeignKey("books.goodreads_book_id"), primary_key=True)
-    tag_id=Column(ForeignKey("tags.tag_id"), primary_key=True)
+    goodreads_book_id=Column(ForeignKey("books.goodreads_book_id"), primary_key=True)
+    tags_id=Column(ForeignKey("tags.tag_id"), primary_key=True)
     count=Column(Integer(), nullable=False)
-    goodreads_book=relationship('Book', cascade="save-update, delete", backref='book_tags')
-    tag=relationship('Tag', cascade="save-update, delete", backref='book_tags')
+
+    goodreads_book=relationship('Book', cascade="save-update, delete", backref='book_tags',
+                        innerjoin=True, lazy="joined")
+    tag=relationship('Tag', cascade="save-update, delete", backref='book_tags', 
+                        innerjoin=True, lazy="joined")
 
 
-    def __init__(self, goodreads_book_id, tag_id, count ):
+    def __init__(self, goodreads_book, tag, count ):
 
-        self._goodreads_book_id=goodreads_book_id
-        self._tag_id=tag_id
-        self._count=count
+        self.goodreads_book_id=goodreads_book
+        self.tags_id=tag
+        self.count=count
+        
+
+    def insert_from_pd(data_book_tags: DataFrame):
+        data_book_tags.to_sql("book_tags", if_exists="append", con=engine, index=False)
+       
 
 
 ## Classe d'objet : Livres prévus pour être lu par le lecteur
-class to_read(Base):
+class To_read(Base):
 
     #définition des arguments de la table
     __tablename__='to_read'
     __table_args__ = {'extend_existing': True}
 
-    user_id=Column("user_id", ForeignKey("users.user_id"), primary_key=True)
-    book_id=Column("book_id", ForeignKey("books.book_id"), primary_key=True)
+    user_id=Column( ForeignKey("users.user_id"), primary_key=True)
+    book_id=Column( ForeignKey("books.book_id"), primary_key=True)
 
     #définition des relations clés primaires - clés étrangères, avec définition des modifications en cascade
-    books=relationship("Book", cascade="save-update, delete", backref='to_read')  
-    users=relationship("User", cascade="save-update, delete", backref='to_read')  
-
-
+    books=relationship("Book", cascade="save-update, delete", backref='to_read', 
+                        innerjoin=True, lazy="joined")  
+    users=relationship("User", cascade="save-update, delete", backref='to_read', 
+                        innerjoin=True, lazy="joined")  
     
+    def __init__(self, users, books):
+
+        self.user_id=users
+        self.book_id=books
+
+        
+    def insert_from_pd(data_to_reads: DataFrame):
+
+        data_to_reads.to_sql('to_reads', con=engine, if_exists="append", index=False)
