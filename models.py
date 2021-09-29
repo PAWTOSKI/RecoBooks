@@ -86,7 +86,7 @@ class Book(Base):
                     ratings_3=int(data_books.iloc[i]["ratings_3"]), 
                     ratings_4=int(data_books.iloc[i]["ratings_4"]), 
                     ratings_5=int(data_books.iloc[i]["ratings_5"]))
-                    for i in range(chunk, min(chunk + 1000, data_books.shape[0]-1))
+                    for i in range(chunk, min(chunk + 1000, data_books.shape[0]))
                 ]
             )
         db.commit()
@@ -151,9 +151,11 @@ class User(Base):
                 User, [dict(
                     user_id=int(data_users.iloc[i]["user_id"]),
                     pseudo="pseudo",
-                    password="" )  for i in range(chunk, min(chunk + 1000, data_users.shape[0]-1))
+                    password="" )  for i in range(chunk, min(chunk + 10000, data_users.shape[0]))
                 ])
         db.commit()
+
+
 
 # Classe d'objet : Tag
 class Tag(Base):
@@ -172,8 +174,15 @@ class Tag(Base):
         self.tag_name=tag_name
         
         
-    def insert_from_pd(data_tags: DataFrame):
-        data_tags.to_sql("tags", if_exists="append", con=engine, index=False)
+    def insert_from_pd(data_tags: DataFrame, db, n=10000000):
+        for chunk in range(0, data_tags.shape[0]-1, 500000):
+            db.bulk_insert_mappings(
+                Tag, [dict(
+                    tag_id=int(data_tags.iloc[i]["tag_id"]),
+                    tag_name=data_tags.iloc[i]["tag_name"])
+                    for i in range(chunk, min(chunk + 500000, data_tags.shape[0]-1))
+                ])
+        db.commit()
 
 
 # Classe d'objet : Notes des avis
@@ -186,7 +195,7 @@ class Rating(Base):
 
     user_id=Column(ForeignKey('users.user_id'), primary_key=True)
     book_id=Column(ForeignKey('books.book_id'), primary_key=True)
-    rating=Column(Enum("1", "2", "3", "4", "5", name="enum_rating") )
+    rating=Column(Integer )
 
     #définition des relations clés primaires - clés étrangères, avec définition des modifications en cascade
     book=relationship('Book', cascade="save-update, delete", backref='ratings')
@@ -199,8 +208,16 @@ class Rating(Base):
         self.rating=rating    
         
     
-    def insert_from_pd(data_ratings: DataFrame):
-        data_ratings.to_sql("ratings", if_exists="append", con=engine, index=False)     
+    def insert_from_pd(data_ratings: DataFrame, db, n=10000000):
+        for chunk in range(0, data_ratings.shape[0]-1, 500000):
+            db.bulk_insert_mappings(
+                Rating, [dict(
+                    user_id=int(data_ratings.iloc[i]["user_id"]),
+                    book_id=int(data_ratings.iloc[i]["book_id"]),
+                    rating=int(data_ratings.iloc[i]["rating"])) 
+                    for i in range(chunk, min(chunk + 500000, data_ratings.shape[0]))
+                ])
+        db.commit()
 
 
 
@@ -251,11 +268,15 @@ class To_read(Base):
         self.book_id=book_id
 
         
-    def insert_from_pd(data_to_reads: DataFrame):
-
-        data_to_reads.to_sql('to_reads', con=engine, if_exists="append", index=False)
-
-
+    def insert_from_pd(data_to_reads: DataFrame, db, n=100000 ):
+        for chunk in range(0, data_to_reads.shape[0]-1, 10000):
+            db.bulk_insert_mappings(
+                To_read, [dict(
+                    user_id=int(data_to_reads.iloc[i]["user_id"]),
+                    book_id=int(data_to_reads.iloc[i]["book_id"]))
+                    for i in range(chunk, min(chunk + 10000, data_to_reads.shape[0]))
+                ])
+        db.commit()
 
 """
 #fonction de books
