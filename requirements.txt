@@ -1,0 +1,17 @@
+# dépendances requise pour faire fonctionner l'ORM
+SQLAlchemy.orm==1.2.2
+SQLAlchemy-1.4.15
+
+matplotlib
+numpy
+pandas
+seaborn
+xmltodict
+lxml
+
+#modules pour permettre l'interaction entre python et une base de données type "Postgresql"
+
+psycopg2
+
+#modules pour permettre l'interaction entre python et une base de données type "Mysql"
+MySQLdb
