@@ -135,6 +135,33 @@ def format_tags(data_tags: pd.DataFrame):
     
     return data_tags
 
+def format_tags_2(data_tags: pd.DataFrame):
+    """
+        préparer df tags afin d'avoir un df prête à insérer dans BD
+    """
+    # nettoyer tag_name au fonction de netoieTags
+    data_tags['tag_name'] = data_tags['tag_name'].apply(lambda x :netoieTags(x)) #appliquer le netoyage sur l'ensemble des lignes tags
+    
+    #remplacer les vide par nan pour
+    data_tags = data_tags.replace('', np.nan, regex=True) 
+    data_tags = data_tags.dropna()
+    data_tags = data_tags.reset_index(drop=True)
+
+    #créer df new_tag de liste de tag_name étant nettoyés
+    new_tags = pd.DataFrame(list(data_tags['tag_name'].unique().tolist()), columns=['tag_name'])
+    new_tags['new_tag_id'] = new_tags.index+1
+    data_tags = pd.merge(data_tags,new_tags, how='left',on='tag_name')
+    
+    data_tags = data_tags.rename(
+        columns = {
+            "id_tag": "id",
+            "tag_name": "tag_name",
+            "new_tag_id": "new_tag_id"
+                }
+        )
+    data_tags.index += 1
+    
+    return data_tags
 
 
 def format_book_tags(data_tags : pd.DataFrame, data_book_tags: pd.DataFrame):
@@ -202,6 +229,43 @@ def format_user(data_users: pd.DataFrame):
     data_users.index += 1        
     
     return data_users
+
+
+def creer_genre():
+    genre_livre = ['art', 'action', 'adult', 'adventure', 'africa', 'alien', 'america',
+                   'angel', 'animal', 'apocalypse', 'apocalyptic', 'asia', 'autobiography',
+                   'award', 'banned', 'biker', 'biographie', 'biography',  'blake', 'boy',
+                   'british', 'brotherhood', 'busines', 'canada', 'canadian', 'chic', 'chicklit',
+                   'child', 'children', 'china', 'classic', 'classroom', 'collection', 'college',
+                   'comedy', 'comic', 'contemporary', 'cook',  'cover', 'crime', 'culture', 'death',
+                   'demon', 'detective', 'development', 'discworld', 'drama', 'dystopia', 'dystopian',
+                   'east', 'economic', 'education', 'engl', 'english', 'epic', 'erotic', 'espionage',
+                   'essay', 'europe', 'faerie', 'fairie', 'fairy', 'fairytale', 'faith', 'family',
+                   'fantasy', 'favorite', 'female', 'feminism', 'feminist', 'fictiistorical',
+                   'fiction', 'finance', 'food', 'france', 'french', 'friends', 'funny', 'future',
+                   'futuristic', 'game', 'general', 'german', 'ghost', 'girl', 'glbt', 'gothic',
+                   'graphic', 'greek', 'health', 'heroine', 'historical', 'history', 'holocaust',
+                   'home', 'horror', 'house', 'humor', 'humorou', 'humour', 'hunger', 'illnes',
+                   'improvement', 'india', 'inspirational', 'italy', 'japan',  'juvenile', 'kid',
+                   'kindle', 'king', 'leadership', 'legal', 'lgbt', 'library', 'literature', 'love',
+                   'magic', 'male', 'manga', 'medical', 'medieval', 'memoir', 'mental', 'military',
+                   'mine', 'modern', 'movie', 'music', 'mystery', 'mythology', 'nature', 'nonfiction',
+                   'novel', 'opera', 'other', 'paranormal', 'parenting', 'personal', 'philosophy',
+                   'physic', 'picture', 'poetry', 'politic', 'psychology', 'pulitzer', 'realism',
+                   'realistic', 'religion', 'romance', 'royalty', 'russia', 'satire', 'school',
+                   'science', 'serie', 'sociology', 'space', 'speculative', 'spiritual', 'sport',
+                   'star','storie', 'story', 'summer', 'supernatural', 'survival', 'suspense', 'teen',
+                   'theatre', 'theology', 'thriller', 'translation', 'travel', 'unlimited', 'urban',
+                   'usa', 'vamp', 'victorian', 'war', 'werewolf', 'werewolve', 'western', 'wheel',
+                   'winner', 'witche', 'wizard', 'women', 'world', 'young',  'youth', 'zombie']
+    df_genre_livre = pd.DataFrame(genre_livre, columns=['genre_name'])
+    df_genre_livre = df_genre_livre.reset_index()
+    df_genre_livre = df_genre_livre.rename(columns={'index': 'genre_id'})
+    df_genre_livre.genre_id += 1
+    
+    return df_genre_livre
+
+
 
 ########################## WIL
 

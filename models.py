@@ -180,7 +180,7 @@ class Tag(Base):
                 Tag, [dict(
                     tag_id=int(data_tags.iloc[i]["tag_id"]),
                     tag_name=data_tags.iloc[i]["tag_name"])
-                    for i in range(chunk, min(chunk + 500000, data_tags.shape[0]-1))
+                    for i in range(chunk, min(chunk + 500000, data_tags.shape[0]))
                 ])
         db.commit()
 
@@ -242,8 +242,16 @@ class Book_tags(Base):
         self._count=count
         
 
-    def insert_from_pd(data_book_tags: DataFrame):
-        data_book_tags.to_sql("book_tags", if_exists="append", con=engine, index=False)
+    def insert_from_pd(data_book_tags: DataFrame, db, n=100000 ):
+        for chunk in range(0, data_book_tags.shape[0]-1, 10000):
+            db.bulk_insert_mappings(
+                Book_tags, [dict(
+                    goodreads_book_id=int(data_book_tags.iloc[i]["goodreads_book_id"]),
+                    tag_id=int(data_book_tags.iloc[i]["tag_id"]),
+                    count=int(data_book_tags.iloc[i]["count"])) 
+                    for i in range(chunk, min(chunk + 10000, data_book_tags.shape[0]))
+                ])
+        db.commit()
     
 
 
@@ -277,6 +285,69 @@ class To_read(Base):
                     for i in range(chunk, min(chunk + 10000, data_to_reads.shape[0]))
                 ])
         db.commit()
+
+
+
+class Genre(Base):
+
+    #définition des arguments de la table
+    __tablename__='genres'
+    __table_args__ = {'extend_existing': True}
+
+    genre_id=Column(Integer, primary_key=True)
+    genre_name=Column(String,)
+
+    #définition des relations clés primaires - clés étrangères, avec définition des modifications en cascade
+    genres=relationship("Book", cascade="save-update, delete", backref='genres')
+
+
+    def __init__(self, genre_id, genre_name):
+
+            self.genre_id=genre_id
+            self.genre_name=genre_name
+
+
+    def insert_from_pd(data_genres: DataFrame, db, n=1000 ):
+            for chunk in range(0, data_genres.shape[0]-1, 100):
+                db.bulk_insert_mappings(
+                    Genre, [dict(
+                        genre_id=int(data_genres.iloc[i]["genre_id"]),
+                        genre_name=data_genres.iloc[i]["genre_name"])
+                        for i in range(chunk, min(chunk + 100, data_genres.shape[0]))
+                    ])
+            db.commit()
+
+
+
+class Genre_book(Base):  
+    
+    #définition des arguments de la table
+    __tablename__='genre_books'
+    __table_args__ = {'extend_existing': True}
+
+    genre_id=Column("genre_id", ForeignKey("genres.genre_id"), primary_key=True)
+    book_id=Column("book_id", ForeignKey("books.book_id"), primary_key=True)
+
+    #définition des relations clés primaires - clés étrangères, avec définition des modifications en cascade
+    genres=relationship("Genre", cascade="save-update, delete", backref='genre_books')  
+    books=relationship("Book", cascade="save-update, delete", backref='books')  
+
+
+    def __init__(self, genre_id, book_id):
+
+            self.genre_id=genre_id
+            self.book_id=book_id
+
+
+    def insert_from_pd(data_genrebooks: DataFrame, db, n=10000 ):
+                for chunk in range(0, data_genrebooks.shape[0]-1, 1000):
+                    db.bulk_insert_mappings(
+                        Genre_book, [dict(
+                            genre_id=int(data_genrebooks.iloc[i]["genre_id"]),
+                            genre_name=data_genrebooks.iloc[i]["genre_name"])
+                            for i in range(chunk, min(chunk + 1000, data_genrebooks.shape[0]))
+                        ])
+                db.commit()
 
 """
 #fonction de books
