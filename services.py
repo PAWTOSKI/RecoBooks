@@ -114,7 +114,12 @@ def format_tags_booktag(tags : pd.DataFrame, booktags: pd.DataFrame):
     occ_count['tag_name'] = occ_count['tag_name'].apply(lambda x: re.sub('^-+(.+)',r"\1",x) )
 
     # definir les mots à supprimer
-    listMot = ["to-", "re-", "read-", "reading", "-my-", "my-", "-in-", "in-" "-before-", "-die", "you-", "must-", "-to-", "finish", "never", "finished", "finish-ed","i-own", "owned", "buy", "-buy$", "bought", "-my-", "-it$", "own", "did-not", "maybe", "borrrowed", "have", "to-have", "didn-t", "for", "on-shelf", "-of-", "on-hold","-me-", "madecry", "need", "currently", "-book", "-than-once", "challenge", "my-", "-reading", "-all-", "-and-", "read"]
+    listMot = [ "to-", "re-", "read-", "reading", "-my-", "my-", "-in-", "in-" "-before-",
+                "-die", "you-", "must-", "-to-", "finish", "never", "finished", "finish-ed",
+                "i-own", "owned", "buy", "-buy$", "bought", "-my-", "-it$", "own", "did-not", 
+                "maybe", "borrrowed", "have", "to-have", "didn-t", "for", "on-shelf", "-of-", 
+                "on-hold","-me-", "madecry", "need", "currently", "-book-", "-than-once", 
+                "challenge", "my-", "-reading", "-all-", "-and-", "read", '-i-', "-books-"]
 
     #supprimer les tags inutiles
     for i in listMot : 
@@ -145,6 +150,7 @@ def format_tags_booktag(tags : pd.DataFrame, booktags: pd.DataFrame):
     for k,v in dic_mot_remplace.items():
         occ_count['tag_name'] = occ_count['tag_name'].apply(lambda x: re.sub(k,v,x))
     
+    
     #supprimer les - au debut
     occ_count['tag_name'] = occ_count['tag_name'].apply(lambda x: re.sub('^-+(.+)',r"\1",x) )
 
@@ -156,36 +162,26 @@ def format_tags_booktag(tags : pd.DataFrame, booktags: pd.DataFrame):
     #supprimer encore une fois des - au but de tag
     #occ_count['tag_name'] = occ_count['tag_name'].apply(lambda x: re.sub('^-+(.+)',r"\1",x) )
 
-    #occ_count = occ_count.replace('', np.nan, regex=True) 
-    #occ_count = occ_count.dropna()
+    occ_count = occ_count.replace('', np.nan, regex=True) 
+    occ_count = occ_count.dropna()
 
-    #re-grouper les tags par tag_name et re-actulisé la valeur de count
-    new_tags_name_count = pd.DataFrame(occ_count
-                .groupby("tag_name").agg('sum')
-                .sort_values("count",ascending=False).reset_index())
     
-    #
-    new_tags_name_count=new_tags_name_count.reset_index().rename(columns={'index':'new_tag_id'})
+    new_tags_name_count=occ_count.reset_index().rename(columns={'index':'new_tag_id'})
     new_tags_name_count.index += 1
     new_tags_name_count.new_tag_id +=1
-    new_tags_name_count.rename(columns={"count":"new_count"})
-    new_tags_name_count = new_tags_name_count.drop(columns="tag_id")
-
-    # re-confusionner avec occ_count par col tag_name pour avoir df qui 
-    # contient des old_tag_id,     new_tag_id, count, new_count
-    new_occ_count = pd.merge(occ_count, new_tags_name_count, on="tag_name")
     
     #merger new_occ_count avec booktags afin d'avoir new_tag_id, new_count
-    new_book_tags = pd.merge(booktags, new_occ_count, on='tag_id' ) 
+    new_book_tags = pd.merge(booktags, new_tags_name_count, on='tag_id' ) 
 
     new_tags = new_book_tags[['new_tag_id', 'tag_name']].drop_duplicates().sort_values('new_tag_id')
     new_tags['tag_name'] = new_tags['tag_name'].apply(lambda x: re.sub('(.+)[-s]$',r'\1',x) )
-    new_tags.dropna(inplace=True)
+    new_tags.reset_index(inplace=True)
+    new_tags.drop(columns='index', inplace=True)
 
-
-    new_book_tags = new_book_tags[['goodreads_book_id', 'new_tag_id', 'count_y']].drop_duplicates().sort_values('goodreads_book_id')
+    #re-grouper les tags par new_tag_id et re-actulisé la valeur de count
+    new_book_tags1 = pd.DataFrame(new_book_tags.drop(columns=['tag_id','count_y', 'tag_name'],axis=1).groupby(['goodreads_book_id', 'new_tag_id'])['count_x'].sum(), columns=['count_x']).reset_index()
     
-    return  new_tags, new_book_tags
+    return  new_tags, new_book_tags1
 
 
 def format_to_read(to_read: pd.DataFrame):
