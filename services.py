@@ -113,18 +113,18 @@ def format_tags_booktag(tags : pd.DataFrame, booktags: pd.DataFrame):
     #supprimer les - au debut
     occ_count['tag_name'] = occ_count['tag_name'].apply(lambda x: re.sub('^-+(.+)',r"\1",x) )
 
-    # definir les mots à supprimer
-    listMot = [ "to-", "re-", "read-", "reading", "-my-", "my-", "-in-", "in-" "-before-",
-                "-die", "you-", "must-", "-to-", "finish", "never", "finished", "finish-ed",
-                "i-own", "owned", "buy", "-buy$", "bought", "-my-", "-it$", "own", "did-not", 
-                "maybe", "borrrowed", "have", "to-have", "didn-t", "for", "on-shelf", "-of-", 
-                "on-hold","-me-", "madecry", "need", "currently", "-book-", "-than-once", 
-                "challenge", "my-", "-reading", "-all-", "-and-", "read", '-i-', "-books-"]
+     # definir les mots à supprimer
+    listMot = [ "to-", "re-", "read-", "reading" "-in-", "-before-", "-die", 
+                "you-", "must-", "-to-", "finish", "never", "finished", "finish-ed",
+                "i-own", "owned", "buy", "-buy$", "bought", "-my-", "-it$", "own", 
+                "did-not", "maybe", "borrrowed", "have", "to-have", "didn-t", "for", 
+                "on-shelf", "-of-", "on-hold","-me-", "madecry", "need", "currently", 
+                "-book", "-than-once", "challenge", "my-", "-reading", "-all-", "-and-",
+                 "read", "^lol$", "-now-", "aa-", "about-"]
 
     #supprimer les tags inutiles
     for i in listMot : 
         occ_count['tag_name'] = occ_count['tag_name'].apply(lambda x: re.sub(i,"",x))
-
     dic_mot_remplace = {    "-fi-": "-fiction", "-fi$": "-fiction",
                             "-fi(c)+-": "-fiction-", "non-fiction": "nonfiction",
                             "non-fic$": "nonfiction", "sci$": "science",
@@ -133,7 +133,7 @@ def format_tags_booktag(tags : pd.DataFrame, booktags: pd.DataFrame):
                             "ya$":"young-adult", "youngadult":"young-adult",
                             "favourite": "favorite", "ｆａｖｏｒｉｔｅｓ": "favorite",
                             "ｆａｖｏｕｒｉｔｅｓ": "favorite", "cómic": "comic",
-                            "clàssic": "classic", "mangá": "manga",
+                            "clàssic": "classic", "mangá": "manga", 
                             "childhood": "children", "chick-lit": "chicklit",
                             "kids": "children", "kiddle": "children",
                             "vamp$": "vampire", "-lit$": "",
@@ -145,36 +145,40 @@ def format_tags_booktag(tags : pd.DataFrame, booktags: pd.DataFrame):
                             "youth": "young", "e-book": "ebook",
                             "audio-book": "audiobook", "(.+)ies" : r"\1y",
                             "fictionfantasy": "fiction-fantasy",
-                            "sery": "serie", "engl-": "english"
+                            "sery": "serie", "engl$": "english", "eng$": "english",
+                            "ｍａｎｇａ": "manga", "ｓｅｒｉｅｓ": "serie", 
+                            "absolutely": "absolute"
                         }
     for k,v in dic_mot_remplace.items():
         occ_count['tag_name'] = occ_count['tag_name'].apply(lambda x: re.sub(k,v,x))
     
-    
     #supprimer les - au debut
-    occ_count['tag_name'] = occ_count['tag_name'].apply(lambda x: re.sub('^-+(.+)',r"\1",x) )
+    occ_count['tag_name'] = occ_count['tag_name'].apply(lambda x: re.sub('^-*(.+)',r"\1",x) )
+    occ_count['tag_name'] = occ_count['tag_name'].apply(lambda x: re.sub('-s$','', x))
 
     occ_count = occ_count.replace('-in-', np.nan, regex=True) 
+    occ_count = occ_count.replace('^a-', np.nan, regex=True)
     occ_count = occ_count.replace('', np.nan, regex=True) 
     occ_count = occ_count.dropna()
-    #enlève les tags dont sa longue est moins 4  
-    occ_count['tag_name'] = occ_count['tag_name'].apply(lambda x: x if len(x)>=3 else '')
-    #supprimer encore une fois des - au but de tag
-    #occ_count['tag_name'] = occ_count['tag_name'].apply(lambda x: re.sub('^-+(.+)',r"\1",x) )
-
-    occ_count = occ_count.replace('', np.nan, regex=True) 
-    occ_count = occ_count.dropna()
-
+    occ_count['tag_name'] = occ_count['tag_name'].apply(lambda x: re.sub('(.+)s$',r'\1',x) )
     
-    new_tags_name_count=occ_count.reset_index().rename(columns={'index':'new_tag_id'})
-    new_tags_name_count.index += 1
-    new_tags_name_count.new_tag_id +=1
+    occ_count['tag_name'] = occ_count['tag_name'].apply(lambda x: re.sub('(.+)-$',r'\1',x) )
+
+    #enlève les tags dont sa longue est moins 3  
+    occ_count['tag_name'] = occ_count['tag_name'].apply(lambda x: x if len(x)>=3 else '')
+    occ_count['tag_name'] = occ_count['tag_name'].apply(lambda x: re.sub('^\S-\S$','', x))
+        
+    occ_count = occ_count.replace('', np.nan, regex=True) 
+    occ_count = occ_count.dropna()
+    #occ_count = occ_count.drop_duplicates().reset_index().rename(columns={'index':'new_tag_id'})
+    occ_count_tagname = occ_count['tag_name'].drop_duplicates().reset_index().rename(columns={'index':'new_tag_id'})
+    occ_count = pd.merge(occ_count_tagname, occ_count, on="tag_name")
     
     #merger new_occ_count avec booktags afin d'avoir new_tag_id, new_count
-    new_book_tags = pd.merge(booktags, new_tags_name_count, on='tag_id' ) 
+    new_book_tags = pd.merge(booktags, occ_count, on='tag_id' ) 
 
     new_tags = new_book_tags[['new_tag_id', 'tag_name']].drop_duplicates().sort_values('new_tag_id')
-    new_tags['tag_name'] = new_tags['tag_name'].apply(lambda x: re.sub('(.+)[-s]$',r'\1',x) )
+   
     new_tags.reset_index(inplace=True)
     new_tags.drop(columns='index', inplace=True)
 

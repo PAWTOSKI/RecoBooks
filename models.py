@@ -248,7 +248,7 @@ class Book_tags(Base):
                 Book_tags, [dict(
                     goodreads_book_id=int(data_book_tags.iloc[i]["goodreads_book_id"]),
                     tag_id=int(data_book_tags.iloc[i]["new_tag_id"]),
-                    count=int(data_book_tags.iloc[i]["count_y"])) 
+                    count=int(data_book_tags.iloc[i]["count_x"])) 
                     for i in range(chunk, min(chunk + 100000, data_book_tags.shape[0]))
                 ])
         db.commit()
