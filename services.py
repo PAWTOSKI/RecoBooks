@@ -88,73 +88,7 @@ def format_users(data_ratings: pd.DataFrame):
 
 
 
-def netoieTags (x):
-    """
-        Nettoyer les tags
-        *** Params:
-        x: tag_name
-        *** Return
-        tag_name nettoyé et normalisé
-    """
-    x = ''.join(char.lower() for char in x if char.isalpha() and char!=' ')
-    
-    #supprimer les s à la fin 
-    x = re.sub('(.+)(s)',r"\1",x) 
-    x = re.sub('[read,new,old,toread]','',x)
-    
-    #garder que les tags qui ont plus de 3 caracteres
-    return  x if len(x)>3  else '' 
-
-
-
-def format_tags(data_tags: pd.DataFrame):
-    """
-        préparer df tags afin d'avoir un df prête à insérer dans BD
-    """
-    # nettoyer tag_name au fonction de netoieTags
-    data_tags['tag_name'] = data_tags['tag_name'].apply(lambda x :netoieTags(x)) #appliquer le netoyage sur l'ensemble des lignes tags
-    
-    #remplacer les vide par nan pour
-    data_tags = data_tags.replace('', np.nan, regex=True) 
-    data_tags = data_tags.dropna()
-    data_tags = data_tags.reset_index(drop=True)
-
-    #créer df new_tag de liste de tag_name étant nettoyés
-    new_tags = pd.DataFrame(list(data_tags['tag_name'].unique().tolist()), columns=['tag_name'])
-    new_tags['new_tag_id'] = new_tags.index+1
-    data_tags = pd.merge(data_tags,new_tags, how='left',on='tag_name')
-    
-    data_tags = data_tags.rename(
-        columns = {
-            "id_tag": "id",
-            "tag_name": "tag_name",
-            "new_tag_id": "new_tag_id"
-                }
-        )
-    data_tags.index += 1
-    
-    return data_tags
-
-def format_tags_booktags(data_tags: pd.DataFrame, data_booktags: pd.DataFrame):
-    """
-        préparer df tags afin d'avoir un df prête à insérer dans BD
-    """
-    # nettoyer tag_name au fonction de netoieTags
-   
-    
-    data_tags = data_tags.rename(
-        columns = {
-            "id_tag": "id",
-            "tag_name": "tag_name",
-            "new_tag_id": "new_tag_id"
-                }
-        )
-    data_tags.index += 1
-    
-    return data_tags
-
-
-def format_book_tags(data_tags : pd.DataFrame, data_book_tags: pd.DataFrame):
+def format_tags_booktag(tags : pd.DataFrame, booktags: pd.DataFrame):
     """
         nettoyer et formatter book_tags et Actualiser la valeur de count  
         afin d'avoir df book_tags prête à insérer dans BD
@@ -167,25 +101,91 @@ def format_book_tags(data_tags : pd.DataFrame, data_book_tags: pd.DataFrame):
         df data_book_tags avec de nouveuau tag_id et count étant actualisé
     """
     
-    data_book_tags = pd.merge(data_book_tags, data_tags, how='left' ,on='tag_id')
+        #calculer la totalité de nb fois taggé par tag -> affecter à occ_count
+    occ_count=pd.DataFrame(booktags.groupby(['tag_id'])['count']
+                    .agg('sum').sort_values( ascending = False ))
+    #confusionner av tags afins d'avoir tag_name
+    occ_count = pd.merge(occ_count, tags, on="tag_id")
+    #convertir en minuscule et enlever des chars speciaux
+    occ_count['tag_name'] = occ_count['tag_name'].apply(
+            lambda x:''.join(char.lower() for char in x if char.isalpha() or char=='-')) 
+
+    #supprimer les - au debut
+    occ_count['tag_name'] = occ_count['tag_name'].apply(lambda x: re.sub('^-+(.+)',r"\1",x) )
+
+    # definir les mots à supprimer
+    listMot = ["to-", "re-", "read-", "reading", "-my-", "my-", "-in-", "in-" "-before-", "-die", "you-", "must-", "-to-", "finish", "never", "finished", "finish-ed","i-own", "owned", "buy", "-buy$", "bought", "-my-", "-it$", "own", "did-not", "maybe", "borrrowed", "have", "to-have", "didn-t", "for", "on-shelf", "-of-", "on-hold","-me-", "madecry", "need", "currently", "-book", "-than-once", "challenge", "my-", "-reading", "-all-", "-and-", "read"]
+
+    #supprimer les tags inutiles
+    for i in listMot : 
+        occ_count['tag_name'] = occ_count['tag_name'].apply(lambda x: re.sub(i,"",x))
+
+    dic_mot_remplace = {    "-fi-": "-fiction", "-fi$": "-fiction",
+                            "-fi(c)+-": "-fiction-", "non-fiction": "nonfiction",
+                            "non-fic$": "nonfiction", "sci$": "science",
+                            "sc(i)+-": "science-", "scifi": "science-fiction",
+                            "y-a$":"young-adult", "ya-":"young-adult-",
+                            "ya$":"young-adult", "youngadult":"young-adult",
+                            "favourite": "favorite", "ｆａｖｏｒｉｔｅｓ": "favorite",
+                            "ｆａｖｏｕｒｉｔｅｓ": "favorite", "cómic": "comic",
+                            "clàssic": "classic", "mangá": "manga",
+                            "childhood": "children", "chick-lit": "chicklit",
+                            "kids": "children", "kiddle": "children",
+                            "vamp$": "vampire", "-lit$": "",
+                            "literary": "literature", "families": "family",
+                            "historical": "history", "humour": "humor", 
+                            "romantic": "romance", "série": "serie",
+                            "lgbtq": "lgbt", "religiou": "religion", 
+                            "house": "home", "werewolve": "werewolf",
+                            "youth": "young", "e-book": "ebook",
+                            "audio-book": "audiobook", "(.+)ies" : r"\1y",
+                            "fictionfantasy": "fiction-fantasy",
+                            "sery": "serie", "engl-": "english"
+                        }
+    for k,v in dic_mot_remplace.items():
+        occ_count['tag_name'] = occ_count['tag_name'].apply(lambda x: re.sub(k,v,x))
     
-    #suppresion des doubons
-    data_book_tags.drop_duplicates(inplace=True)
-    #data_book_tags = data_book_tags.dropna(inplace=True)
-    data_book_tags = data_book_tags.reset_index(drop=True)
-    data_book_tags = data_book_tags.groupby(['goodreads_book_id','new_tag_id']).agg({'count':'sum'}).reset_index()
-    data_book_tags.rename(columns={'new_tag_id':'tag_id'}, inplace=True)
+    #supprimer les - au debut
+    occ_count['tag_name'] = occ_count['tag_name'].apply(lambda x: re.sub('^-+(.+)',r"\1",x) )
+
+    occ_count = occ_count.replace('-in-', np.nan, regex=True) 
+    occ_count = occ_count.replace('', np.nan, regex=True) 
+    occ_count = occ_count.dropna()
+    #enlève les tags dont sa longue est moins 4  
+    occ_count['tag_name'] = occ_count['tag_name'].apply(lambda x: x if len(x)>=3 else '')
+    #supprimer encore une fois des - au but de tag
+    #occ_count['tag_name'] = occ_count['tag_name'].apply(lambda x: re.sub('^-+(.+)',r"\1",x) )
+
+    #occ_count = occ_count.replace('', np.nan, regex=True) 
+    #occ_count = occ_count.dropna()
+
+    #re-grouper les tags par tag_name et re-actulisé la valeur de count
+    new_tags_name_count = pd.DataFrame(occ_count
+                .groupby("tag_name").agg('sum')
+                .sort_values("count",ascending=False).reset_index())
     
-    data_book_tags = data_book_tags.rename(
-            columns = {
-                "goodreads_book_id": "goodreads_book_id",
-                "tag_id": "tag_id",
-                "count": "count"
-                    }
-        )
-    data_book_tags.index += 1
+    #
+    new_tags_name_count=new_tags_name_count.reset_index().rename(columns={'index':'new_tag_id'})
+    new_tags_name_count.index += 1
+    new_tags_name_count.new_tag_id +=1
+    new_tags_name_count.rename(columns={"count":"new_count"})
+    new_tags_name_count = new_tags_name_count.drop(columns="tag_id")
+
+    # re-confusionner avec occ_count par col tag_name pour avoir df qui 
+    # contient des old_tag_id,     new_tag_id, count, new_count
+    new_occ_count = pd.merge(occ_count, new_tags_name_count, on="tag_name")
     
-    return data_book_tags
+    #merger new_occ_count avec booktags afin d'avoir new_tag_id, new_count
+    new_book_tags = pd.merge(booktags, new_occ_count, on='tag_id' ) 
+
+    new_tags = new_book_tags[['new_tag_id', 'tag_name']].drop_duplicates().sort_values('new_tag_id')
+    new_tags['tag_name'] = new_tags['tag_name'].apply(lambda x: re.sub('(.+)[-s]$',r'\1',x) )
+    new_tags.dropna(inplace=True)
+
+
+    new_book_tags = new_book_tags[['goodreads_book_id', 'new_tag_id', 'count_y']].drop_duplicates().sort_values('goodreads_book_id')
+    
+    return  new_tags, new_book_tags
 
 
 def format_to_read(to_read: pd.DataFrame):
@@ -227,5 +227,4 @@ def format_user(data_users: pd.DataFrame):
 
 #    tags. to_sql('tags', if_exists='append', con=engine, index=False) #insertion dans tags
 #    book_tags.to_sql('book_tags',if_exists='append', con=engine,index=False)
-    
     
