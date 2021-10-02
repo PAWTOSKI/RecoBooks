@@ -1,3 +1,5 @@
+## coding=utf-8
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -31,3 +33,26 @@ Base = declarative_base()
 
 #Base.query = db_session.query_property()
 
+"""from sqlalchemy import create_engine  
+from sqlalchemy.orm import scoped_session, sessionmaker
+import json
+ 
+from sqlalchemy.ext.declarative import declarative_base
+
+def getEngine():
+    print('Charger le fichier config d\'engine de DB')
+    with open('config.json', 'r') as fichier:
+        data = json.load(fichier)
+
+    db_info_connect = data["connector"]+"://"+data['user']+":"+data['pwd']+"@"+data['host']+':'+data['port']+'/'+data['bd']
+    engine = create_engine(db_info_connect, echo=True, future=True)
+    print('L\'engine est pret')
+    return engine
+
+engine=getEngine()
+
+
+db_session = scoped_session(sessionmaker(autocommit=False,
+                                            autoflush=False,
+                                            bind=engine))
+Base= declarative_base()"""

@@ -2,22 +2,25 @@
 
 import pandas as pd
 import numpy as np
+from pandas.core.frame import DataFrame
+import enum
 import os
 import glob
 from lxml import etree
 import xml.etree.ElementTree as et
 import xmltodict
 import re
-from pandas import DataFrame
-from sqlalchemy import Column, String, Integer, Enum, ForeignKey
+from sqlalchemy import Column, String, Integer, Enum, ForeignKey, update
 from sqlalchemy.orm import relationship
-from database import Base, engine #importer objet Base du fichier database.py
+from database import Base, engine, DBsession
 
+# ces classes sont définis selon le schéma imposé par l'ORM.
 
+# Classe d'objet : livre
 
 class Book(Base):
- 
-   #définition des arguments de la table
+
+    #définition des arguments de la table
     __tablename__="books"
     __table_args__ = {'extend_existing': True}
     
@@ -26,11 +29,11 @@ class Book(Base):
     title=Column(String, nullable=False)
     book_id=Column(Integer, primary_key=True)
     isbn=Column(String, nullable=True)
-    books_count=Column(String, nullable=True)
+    books_count=Column(Integer, nullable=True)
     original_title=Column(String, nullable=True)
-    language_code=Column( String, nullable=False )
+    language_code=Column(String, nullable=False )
     ratings_count=Column(Integer, nullable=True)
-    goodreads_book_id=Column(Integer, nullable=True, unique=True)
+    goodreads_book_id=Column(Integer, nullable=True)
     original_publication_year=Column(Integer, nullable=True)
     ratings_1=Column(Integer, nullable=True)
     ratings_2=Column(Integer, nullable=True)
@@ -126,7 +129,6 @@ class Book(Base):
         self.similar_books=list_similar_b
 
 
-
 # Classe d'objet : utilisateur
 class User(Base):
     
@@ -198,9 +200,11 @@ class Rating(Base):
     rating=Column(Integer )
 
     #définition des relations clés primaires - clés étrangères, avec définition des modifications en cascade
-    book=relationship('Book', cascade="save-update, delete", backref='ratings')
-    user=relationship('User', cascade="save-update, delete", backref='ratings')
-
+    
+    book=relationship('Book', cascade="save-update, delete", backref='ratings', 
+                        innerjoin=True, lazy="joined")
+    user=relationship('User', cascade="save-update, delete", backref='ratings', 
+                        innerjoin=True, lazy="joined")
 
     def __init__(self, user, book, rating ):
         self.user_id=user
