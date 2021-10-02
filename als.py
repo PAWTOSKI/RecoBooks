@@ -119,4 +119,4 @@ class ExplicitMF:
     def bookRecom(user_id,model,books):
         prdt=model.predict()
         l=sorted(list(prdt[user_id]),reverse=True)
-        return books[books['book_id'].isin([l.index(e) for e in l if 4<=e<=5][:10])
+        return books[books['book_id']].isin([l.index(e) for e in l if 4<=e<=5][:10])

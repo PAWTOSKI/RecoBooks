@@ -5,6 +5,7 @@ import pandas as pd
 from models import *
 from sysRecomPopularite import PoPRecommend
 from factoryDB import *
+from als import *
 
 global ratings, books 
 
@@ -49,6 +50,8 @@ def print_result(lsResult: pd.DataFrame):
         print("---")
 
 def menu() :
+    ratings = pd.read_csv('data/ratings.csv')
+    books = pd.read_csv('data/books.csv')
     print(("\tBienvenue de systeme de recommendation").upper())
     print("%30s" %("Recobook".upper()))
     print("%15s" %("Groupe: Souad - Wilried - Nga"))
@@ -87,15 +90,20 @@ def menu() :
             identity = int(input("Votre identifiant: "))
         except ValueError:
             print("Désolé l'identifiant saisie n'est pas un nombre.")
-            identity = int(input("Votre identifiant: "))
+            identity = int(input("eessayez: "))
         
         passwd = input("Mot de password (null): ") 
 
         #check identifiant à la base de données
-        db_user_id, db_passwd = get_db(User.user_id , User.password)
+        #db_user_id, db_passwd = get_db(User.user_id , User.password)
+        db_user_id = 1243
+        passwd = 0
+        db_passwd = ""
+        identity = 1243
 
-        if (db_user_id==identity) & (db_passwd==db_passwd):
-            print("systeme filtrage collaboratif")
+        if (db_user_id==identity) & (db_passwd==passwd):
+            mf_exp = ExplicitMF()
+            book_recom = mf_exp.bookRecom(db_user_id,model,books)
         else:
             print("Identifiant est pas ")
 
