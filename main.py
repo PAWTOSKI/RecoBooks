@@ -4,6 +4,7 @@ from os import system, name
 import pandas as pd
 from models import *
 from sysRecomPopularite import PoPRecommend
+from factoryDB import *
 
 global ratings, books 
 
@@ -27,8 +28,12 @@ def read_dataset_from_web():
     data = "Data from the web"
     return data
 
-def write_data_to_database(data):
-    cr
+def write_data_to_database():
+    print("Creer une base de donnees à SGBD...")
+    #create_db()
+    print("Intégrer les données dans DB va commencer -->>>")
+    #insert_db()
+
 
 def read_data_from_DB(ratings, books):
     ratings = pd.read_csv('data/ratings.csv')
@@ -53,8 +58,10 @@ def menu() :
         print("Quel genre de livre préférez-vous (maximum: 5 genres) ?")
         print("Par example: action, fiction, adult, romance, science, fantasy, classic, comtemporary,...")
         list_genre_nv_user = input("Les genres sont séparés par ',' (appyez ENTRER pour terminer) : ")
+ 
         list_genre_nv_user = list_genre_nv_user.split(",")
         print("nb_genre = ", len(list_genre_nv_user))
+        
         ratings = pd.read_csv('data/ratings.csv')
         books = pd.read_csv('data/books.csv')
 
@@ -64,10 +71,12 @@ def menu() :
             print("Il faut saisir un nombre (5, 10, 15, 16,...) ")
        
         popRecom = PoPRecommend(ratings, books)
+        if nombre_livre_recom == 0 : 
+            nombre_livre_recom = 30
         if (len(list_genre_nv_user)==1) & (str(list_genre_nv_user[0])==''):
-            list_livre = popRecom.populariteNotePonderer(nombre_livre_recom)
+            list_livre = popRecom.calculRatingByBook()
             print()
-            print("result = ", list_livre.shape )
+            #print("result = ", list_livre.shape )
             print("%15s" %("<<<< RESULTAT >>>>"))
             print_result(list_livre)
         else :
@@ -78,6 +87,7 @@ def menu() :
             identity = int(input("Votre identifiant: "))
         except ValueError:
             print("Désolé l'identifiant saisie n'est pas un nombre.")
+            identity = int(input("Votre identifiant: "))
         
         passwd = input("Mot de password (null): ") 
 
@@ -102,9 +112,10 @@ def clear_screen():
 
 
 def main():
+    print("Creer DB et insérer les donnes pour l'application!")
     data = read_dataset_from_web()
-    modified_data = process_data(data)
-    write_data_to_database(modified_data)
+    #modified_data = process_data(data)
+    #write_data_to_database()
     
     #ratings, books = read_data_from_DB(ratings, books)
     cont = True

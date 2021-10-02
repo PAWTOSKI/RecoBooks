@@ -10,7 +10,7 @@ import json
         Il est utilisé les infos de connexion enregistré dans le config.json.
 """
 
-with open('RecoBooks/config.json', 'r') as fichier:
+with open('config.json', 'r') as fichier:
         data = json.load(fichier)
 #recuperer les informations de connection à DB étant stocké dans fichir json
 
