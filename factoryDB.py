@@ -6,8 +6,14 @@ from models import *
 
 db_session = DBsession()
 
-models.Base.metadata.create_all(engine)
-DBsession.remove(db_session)
+
+def create_db():
+    """
+        creer une base de donnée dans SGDB étant déclaré config.json 
+    """
+    models.Base.metadata.create_all(engine)
+    DBsession.remove(db_session)
+
 
 
 def insert_db():
@@ -62,4 +68,3 @@ def insert_db():
  
     db_session.commit()
     
-insert_db()

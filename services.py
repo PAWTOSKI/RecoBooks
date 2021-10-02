@@ -101,7 +101,7 @@ def format_tags_booktag(tags : pd.DataFrame, booktags: pd.DataFrame):
         df data_book_tags avec de nouveuau tag_id et count étant actualisé
     """
     
-        #calculer la totalité de nb fois taggé par tag -> affecter à occ_count
+    #calculer la totalité de nb fois taggé par tag -> affecter à occ_count
     occ_count=pd.DataFrame(booktags.groupby(['tag_id'])['count']
                     .agg('sum').sort_values( ascending = False ))
     #confusionner av tags afins d'avoir tag_name
@@ -125,6 +125,8 @@ def format_tags_booktag(tags : pd.DataFrame, booktags: pd.DataFrame):
     #supprimer les tags inutiles
     for i in listMot : 
         occ_count['tag_name'] = occ_count['tag_name'].apply(lambda x: re.sub(i,"",x))
+    
+    #definir les tags devraient normaliser
     dic_mot_remplace = {    "-fi-": "-fiction", "-fi$": "-fiction",
                             "-fi(c)+-": "-fiction-", "non-fiction": "nonfiction",
                             "non-fic$": "nonfiction", "sci$": "science",
@@ -132,7 +134,7 @@ def format_tags_booktag(tags : pd.DataFrame, booktags: pd.DataFrame):
                             "y-a$":"young-adult", "ya-":"young-adult-",
                             "ya$":"young-adult", "youngadult":"young-adult",
                             "favourite": "favorite", "ｆａｖｏｒｉｔｅｓ": "favorite",
-                            "ｆａｖｏｕｒｉｔｅｓ": "favorite", "cómic": "comic",
+                            "cómic": "comic",
                             "clàssic": "classic", "mangá": "manga", 
                             "childhood": "children", "chick-lit": "chicklit",
                             "kids": "children", "kiddle": "children",
@@ -196,30 +198,6 @@ def format_to_read(to_read: pd.DataFrame):
     to_read.dropna(inplace=True)
     
     return to_read
-
-
-
-def format_user(data_users: pd.DataFrame):
-    """
-        
-    """
-    #suppresion des doubons
-    data_users.drop_duplicates(inplace=True)
-
-    #suppresion des doubons
-    data_users.dropna(inplace=True)  
-
-    data_users = data_users.rename(
-        columns={
-            "user_id": "id",
-            "name": "name", 
-            "password":"password"
-                }
-        )
-    data_users.index += 1        
-    
-    return data_users
-
 
 
 
