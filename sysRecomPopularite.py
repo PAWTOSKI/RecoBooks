@@ -21,7 +21,7 @@ class PoPRecommend():
                                         .groupby('book_id')['rating']
                                         .agg(func=['count', 'mean']))
         ratings_by_livre.reset_index(inplace=True)
-        ratings_by_livre = ratings_by_livre.rename(columns={'mean':'avg_rating', 'count':'cnt_vote'})
+        ratings_by_livre = ratings_by_livre.rename(columns={'mean':'avg_rating', 'count':'cnt_vote'}).reset_index()
         return ratings_by_livre
 
     def note_ponderee(self, x, mseuil, cmoyen):
@@ -58,13 +58,14 @@ class PoPRecommend():
         #ajouter un col 'score' avec le note pondere selon nb_seuil, c_moyen
         q_ratings_livre['score'] = q_ratings_livre.apply(lambda x: self.note_ponderee(x, nb_seuil, c_moyen), axis=1)
         q_ratings_livre = q_ratings_livre.sort_values('score', ascending=False)
-
+        print(q_ratings_livre)
         #creer un dataframe result avec col bbok_id et score du 30 livres ayant des meilleurs scores
         result = q_ratings_livre[['book_id', 'score']].head(nbLivres).copy()
         result = pd.merge(result, self.dfBooks, on='book_id')
         return result
 
 
+"""
 print("Demarrer system ...")
 print("1. Charger des donnees")
 ratings = pd.read_csv('../donnees/ratings.csv')
@@ -80,3 +81,4 @@ print("3. Creer liste de ", nbLivres, ' livres...\n')
 list_livres_recomme = popRecom.populariteNotePonderer(nbLivres)
 print('--- RESULTAT ---')
 print(list_livres_recomme)
+"""

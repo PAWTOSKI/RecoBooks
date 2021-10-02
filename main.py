@@ -17,6 +17,7 @@ def process_data(data):
 def read_dataset_from_web():
     #recupérer le chemin de dossier courant
     dossier_courant = os.getcwd()
+    print(dossier_courant)
     pathDir = dossier_courant+"/"+"data"
     if str(os.path.exists((pathDir))) :
         print("Dossier est exist!")
@@ -27,8 +28,7 @@ def read_dataset_from_web():
     return data
 
 def write_data_to_database(data):
-    print("Writing data to a database")
-    print(data)
+    cr
 
 def read_data_from_DB(ratings, books):
     ratings = pd.read_csv('data/ratings.csv')
@@ -105,7 +105,7 @@ def main():
     data = read_dataset_from_web()
     modified_data = process_data(data)
     write_data_to_database(modified_data)
-    clear_screen()
+    
     #ratings, books = read_data_from_DB(ratings, books)
     cont = True
     while cont :
