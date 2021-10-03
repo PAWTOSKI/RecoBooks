@@ -3,7 +3,7 @@ import os
 from os import system, name
 import pandas as pd
 from models import *
-from sysRecomPopularite import PoPRecommend
+from sysRecomPopularite import populariteNotePonderer
 from factoryDB import *
 from als import *
 
@@ -43,10 +43,11 @@ def read_data_from_DB(ratings, books):
 
 def print_result(lsResult: pd.DataFrame):
     cols = lsResult.columns
+    print(cols)
     
-    for row in lsResult.shape[0]:
+    for row in range(lsResult.shape[0]):
         print("Livre %d" %(row+1))
-        print(lsResult[c]+"\t" for c in cols )
+        print(lsResult.iloc[row:row+1][c]+"\t" for c in cols )
         print("---")
 
 def menu() :
@@ -69,19 +70,19 @@ def menu() :
         books = pd.read_csv('data/books.csv')
 
         try:
-            nombre_livre_recom = input("Combien de livre voulez-vous recommender ?")
+            nombre_livre_recom = int(input("Combien de livre voulez-vous recommender ?"))
         except ValueError:
             print("Il faut saisir un nombre (5, 10, 15, 16,...) ")
+            nombre_livre_recom = int(input("Reessayez: "))
        
-        popRecom = PoPRecommend(ratings, books)
         if nombre_livre_recom == 0 : 
             nombre_livre_recom = 30
         if (len(list_genre_nv_user)==1) & (str(list_genre_nv_user[0])==''):
-            list_livre = popRecom.calculRatingByBook()
+            list_livre = populariteNotePonderer(ratings, nombre_livre_recom)
             print()
             #print("result = ", list_livre.shape )
             print("%15s" %("<<<< RESULTAT >>>>"))
-            print_result(list_livre)
+            print(list_livre)
         else :
             print("System popolarite avec genre")
     else:
@@ -104,6 +105,7 @@ def menu() :
         if (db_user_id==identity) & (db_passwd==passwd):
             mf_exp = ExplicitMF()
             book_recom = mf_exp.bookRecom(db_user_id,model,books)
+            print(book_recom)
         else:
             print("Identifiant est pas ")
 
