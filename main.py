@@ -10,7 +10,7 @@ from als import *
 from utils_db import *
 from database import engine
 
-global data_ratings, data_books 
+global data_ratings, data_books , data_users, data_toread, data_tags, data_booktags
 
 def process_data(data):
     print("Beginning data processing...")
@@ -44,20 +44,26 @@ def read_data_from_DB():
     #con = engine.connect()
     #data_ratings = con.execute(select(Table('ratings', metadata, autoload=True, autoload_with=engine)))
     #data_books = con.execute(select(Table('books', metadata, autoload=True, autoload_with=engine)))
-    global data_books, data_ratings
+    global data_books, data_ratings, data_users, data_toread, data_tags, data_booktags
 
-    data_books = read_table(Book)
-    data_ratings = read_table(Rating)
-    return data_ratings, data_books
+    #data_books = read_table(Book)
+    #data_ratings = read_table(Rating)
+    col_book = [Book.book_id, Book.goodreads_book_id, Book.ratings_count, Book.isbn, Book.title, Book.original_title]
+    col_rating = [Rating.book_id, Rating.user_id, Rating.rating]
+    col_user = [User.user_id, User.password]
+    col_tag = [Tag.tag_id, Tag.tag_name]
+    col_toread = [To_read.book_id, To_read.user_id]
+    col_booktag =[Book_tags.goodreads_book_id, Book_tags.tag_id, Book_tags.count]
+    
+    data_books = pd.DataFrame(get_db(col_book)).reset_index()
+    data_ratings = pd.DataFrame(get_db(col_rating)).reset_index()
+    data_tags = pd.DataFrame(get_db(col_tag)).reset_index()
+    data_users = pd.DataFrame(get_db(col_user)).reset_index
+    data_toread = pd.DataFrame(get_db(col_toread)).reset_index()
+    data_booktags = pd.DataFrame(get_db(col_booktag)).reset_index()
 
-#def print_result(lsResult: pd.DataFrame):
-#    cols = lsResult.columns
-#    print(cols)
-#    
-#    for row in range(lsResult.shape[0]):
-#        print("Livre %d" %(row+1))
-#        print(lsResult.iloc[row:row+1][c]+"\t" for c in cols )
-#        print("---")
+    return data_ratings, data_books, data_users, data_toread, data_tags, data_booktags
+
 
 
 def menu() :
@@ -83,7 +89,7 @@ def menu() :
         if nombre_livre_recom == 0 : 
             nombre_livre_recom = 30
         if (len(list_genre_nv_user)==1) & (str(list_genre_nv_user[0])==''):
-            list_livre = populariteNotePonderer(data_ratings, nombre_livre_recom)
+            list_livre = populariteNotePonderer(data_ratings[['book_id', 'user_id', 'rating']], nombre_livre_recom)
             print()
             #print("result = ", list_livre.shape )
             print("%15s" %("<<<< RESULTAT >>>>"))
@@ -128,15 +134,16 @@ def clear_screen():
 
 
 def main():
-    global data_ratings, data_books 
+    global data_ratings, data_books , data_users, data_toread, data_tags, data_booktags
+
     print("Creer DB et insérer les donnes pour l'application!")
     #data = read_dataset_from_web()
     #modified_data = process_data(data)
     #write_data_to_database()
     
-    data_ratings, data_books = read_data_from_DB()
-    print("ratings = ", data_ratings.shape)
-    print("books = ", data_books.shape)
+    data_ratings, data_books, data_users, data_toread, data_tags, data_booktags = read_data_from_DB()
+    print("ratings = ", data_ratings.head(1))
+    print("books = ", data_books.head(2))
     cont = True
     while cont :
         menu()

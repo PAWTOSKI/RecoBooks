@@ -66,16 +66,3 @@ def insert_db():
     print("Les données sont insérées to DB")
  
     db_session.commit()
-
-
-def read_table(nameClass):
-    #con = engine.connect()
-    #metadata = db.MetaData()
-    #table = db.Table(table_name, metadata, autoload=True, autoload_with=engine)
-    #query = db.select([table])
-    #resultSet = con.execute(query).fetchall()
-    resultSet = db_session.query(nameClass).all()
-
-    df_table = pd.DataFrame(resultSet)
-    #df_table.columns = resultSet[0].keys()
-    return df_table
