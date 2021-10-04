@@ -26,6 +26,7 @@ def format_books(data_books: pd.DataFrame):
 
     #suppresion des doubons
     data_books.dropna(inplace=True)
+    data_books = data_books.reset_index(drop=True)
 
     ### preparer dataframe
     data_books = data_books[["book_id", "authors","title", "isbn", "books_count", "original_title", "language_code", "ratings_count", "goodreads_book_id", "original_publication_year", "ratings_1", "ratings_2", "ratings_3", "ratings_4", "ratings_5"]].copy()
@@ -63,7 +64,8 @@ def format_ratings(data_ratings: pd.DataFrame):
     data_ratings.drop_duplicates(inplace=True)
 
     #suppresion des doubons
-    data_ratings.dropna(inplace=True)    
+    data_ratings.dropna(inplace=True) 
+    data_ratings = data_ratings.reset_index(drop=True)   
 
     data_ratings = data_ratings.rename(
             columns = {
@@ -181,8 +183,8 @@ def format_tags_booktag(tags : pd.DataFrame, booktags: pd.DataFrame):
 
     new_tags = new_book_tags[['new_tag_id', 'tag_name']].drop_duplicates().sort_values('new_tag_id')
    
-    new_tags.reset_index(inplace=True)
-    new_tags.drop(columns='index', inplace=True)
+    new_tags = new_tags.reset_index(drop=True)
+    #new_tags.drop(columns='index', inplace=True)
 
     #re-grouper les tags par new_tag_id et re-actulisé la valeur de count
     new_book_tags1 = pd.DataFrame(new_book_tags.drop(columns=['tag_id','count_y', 'tag_name'],axis=1).groupby(['goodreads_book_id', 'new_tag_id'])['count_x'].sum(), columns=['count_x']).reset_index()
@@ -196,6 +198,7 @@ def format_to_read(to_read: pd.DataFrame):
     """
     to_read.drop_duplicates(inplace=True)
     to_read.dropna(inplace=True)
+    to_read = to_read.reset_index(drop=True)
     
     return to_read
 

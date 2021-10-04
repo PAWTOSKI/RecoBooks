@@ -15,7 +15,7 @@ def create_db():
     DBsession.remove(db_session)
 
 
-def insert_db():
+def insert_alldb():
     """
         Insère les données à la base de donnees
     """

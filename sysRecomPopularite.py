@@ -1,3 +1,4 @@
+from typing import List
 import pandas as pd
 import numpy as np
 #
@@ -69,6 +70,17 @@ def populariteNotePonderer(dfRatings: pd.DataFrame, nbLivres=30):
     #result = pd.merge(result,  dfBooks, on='book_id')
 
     return result
+
+
+def popularite_avec_genre(  dfRatings: pd.DataFrame, 
+                            dfBooks: pd.DataFrame, 
+                            dfBooktags: pd.DataFrame,
+                            df_Tags: pd.DataFrame,
+                            nbLivres=100):
+    
+    liste_livre_note = populariteNotePonderer(dfRatings, nbLivres)
+    liste_livre_note = pd.merge(liste_livre_note, dfBooks [['book_id', ]], on='book_id').reset_index()
+
 
 
 """ 
